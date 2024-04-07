@@ -89,20 +89,29 @@ Output:
 
 ### Transformation
 
-A basic example of transforming data
+Prepare the transformer:
 
 ```python
-language_check = BaseTransformer(
-    prompt="Correct any spelling mistakes and grammar in the following text",
+pii_remover = BaseTransformer(
+    prompt="Replace any Personal Identity Identifiers (PII) in the given text with <type of PII>. PII includes any information that can be used to identify an individual, such as names, addresses, phone numbers, email addresses, social security numbers, etc.",
     llm_provider=provider,
 )
-print(language_check.transform("I m too laze 2 clean my data propperly. plz hlp"))
+```
+
+Run the transformation:
+
+```python
+print(
+    pii_remover.transform(
+        "John Doe, residing at 1234 Maple Street, Anytown, CA, 90210, recently contacted customer support to report an issue. He provided his phone number, (555) 123-4567, and email address, johndoe@email.com, for follow-up communication."
+    )
+)
 ```
 
 Output:
 
 ```python
-I'm too lazy to clean my data properly. Please help.
+<Name>, residing at <Address>, <City>, <State>, <ZIP code>, recently contacted customer support to report an issue. They provided their phone number, <Phone number>, and email address, <Email address>, for follow-up communication.
 ```
 
 ### Dataframes
