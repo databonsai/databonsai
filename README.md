@@ -23,7 +23,8 @@ databonsai is a Python library that uses LLMs to perform data cleaning tasks.
 pip install databonsai
 ```
 
-Store your API keys on an .env file in the root of your project.
+Store your API keys on an .env file in the root of your project, or specify it
+as an argument when initializing the provider.
 
 ```bash
 OPENAI_API_KEY=xxx # if you use OpenAiProvider

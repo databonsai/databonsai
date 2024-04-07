@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name="databonsai",
-    version="0.1.0",
+    version="0.2.0",
     description="A package for cleaning and curating data with LLMs",
-    long_description=open("README.md").read(),
+    long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     author="Alvin Ryanputra",
     author_email="databonsai.ai@gmail.com",
