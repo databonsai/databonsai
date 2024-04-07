@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "databonsai"
+version = "0.1.0"
+description = "A Python package to clean and curate your data with LLMs"
+authors = ["Alvin Ryanputra <databonsai.ai@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"  
+
+openai = "^1.16.2"
+anthropic = "^0.23.1"
+tenacity = "^8.2.3"
+python-dotenv = "^1.0.1"
+pydantic = "^2.6.4"
+pydantic_core = "^2.16.3"
+
+[tool.poetry.dev-dependencies]
+# Add development dependencies here (if any)
+pytest = "^7.2.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

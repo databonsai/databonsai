@@ -1,0 +1,7 @@
+.env
+.*pyc
+__pycache__/
+venv
+dist/
+databonsai.egg-info/
+build/
