@@ -42,8 +42,7 @@ class BaseTransformer(BaseModel):
 
         Args:
             input_data (str): The text data to be transformed.
-            max_tokens (int, optional): The maximum number of tokens to generate in the response.
-                Defaults to 1000.
+            max_tokens (int, optional): The maximum number of tokens to generate in the response. Defaults to 1000.
 
         Returns:
             str: The transformed data.
