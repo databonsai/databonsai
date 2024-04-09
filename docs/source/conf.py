@@ -7,7 +7,20 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 import os
 import sys
+import sphinx_rtd_theme
 
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+html_theme_options = {
+    "analytics_id": "UA-XXXXXXX-1",  # Provided by Google Analytics
+    "analytics_anonymize_ip": False,
+    "logo_only": False,
+    "display_version": True,
+    "prev_next_buttons_location": "bottom",
+    "style_external_links": False,
+    "vcs_pageview_mode": "",
+    "style_nav_header_background": "white",
+    # Other options...
+}
 sys.path.insert(0, os.path.abspath("../../"))  # Add project root
 sys.path.insert(0, os.path.abspath("../../databonsai"))
 
