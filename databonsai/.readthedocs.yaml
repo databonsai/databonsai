@@ -1,0 +1,7 @@
+# .readthedocs.yaml
+sphinx:
+    configuration: /databonsai/docs/source/source/conf.py
+
+python:
+    install:
+        - requirements: /databonsai/docs/requirements.txt
