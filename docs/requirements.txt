@@ -26,3 +26,4 @@ tokenizers==0.15.2 ; python_version >= "3.8" and python_version < "4.0"
 tqdm==4.66.2 ; python_version >= "3.8" and python_version < "4.0"
 typing-extensions==4.11.0 ; python_version >= "3.8" and python_version < "4.0"
 urllib3==2.2.1 ; python_version >= "3.8" and python_version < "4.0"
+sphinx-rtd-theme
