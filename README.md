@@ -11,9 +11,10 @@ databonsai is a Python library that uses LLMs to perform data cleaning tasks.
 
 ## Features
 
--   Categorization / Transformation of data using LLMs
--   Decomposition of data into structured formats using LLMs
+-   Suite of tools for data processing using LLMs including categorization,
+    transformation, and decomposition
 -   Validation of LLM outputs
+-   Batch processing for token savings
 -   Retry logic with exponential backoff for handling rate limits and transient
     errors
 
@@ -68,6 +69,45 @@ Output:
 Weather
 ```
 
+### Dataframes & Lists (Save tokens with batching!)
+
+If you have a pandas dataframe or list, you can use batch methods to save
+tokens.
+
+```python
+df["Category"] = None # Initialize it if it doesn't exist
+success_idx = apply_to_column_batch( df["Headline"], df["Category"], categorizer.categorize_batch, batch_size=10) # Modifies the list in place
+```
+
+By default, exponential backoff is used to handle rate limiting.
+[Read more here](docs/llm_providers.md)
+
+If it fails midway (even after exponential backoff), you can resume from the
+last successful index.
+
+```python
+success_idx = apply_to_column_batch( df["Headline"], df["Category"], categorizer.categorize_batch, batch_size=10, start_idx=success_idx)
+```
+
+This also works for regular python lists.
+
+There will also be a progress bar so you can track the progress of the
+categorization.
+
+By batching multiple inputs together, you can save tokens by not resending the
+schema each time. Note that the better the LLM model, the greater the batch_size
+you can use (depending on the length of your inputs).
+
+To use it without batching:
+
+```python
+success_idx = apply_to_column( df["Headline"], df["Category"], categorizer.categorize)
+```
+
+## More Tools
+
+### Multi-categorization
+
 Multiple categories can also be returned. This is useful for tagging data!
 
 ```python
@@ -114,21 +154,6 @@ Output:
 ```python
 <Name>, residing at <Address>, <City>, <State>, <ZIP code>, recently contacted customer support to report an issue. They provided their phone number, <Phone number>, and email address, <Email address>, for follow-up communication.
 ```
-
-### Dataframes
-
-If you have a pandas dataframe, you can simple run the following.
-
-```python
-df['category'] = df['content'].apply(categorizer.categorize)
-```
-
-```python
-df['transformed'] = df['content'].apply(language_check.transform)
-```
-
-The library uses exponential backoff to handle rate limiting. Go to
-docs/llm_providers.md for more information on how to handle rate limiting.
 
 ### Decomposition
 

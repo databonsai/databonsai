@@ -1,3 +1,4 @@
+from typing import List
 from openai import OpenAI
 from .llm_provider import LLMProvider
 import os
@@ -99,6 +100,39 @@ class OpenAIProvider(LLMProvider):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"{user_prompt}"},
             ],
+            temperature=self.temperature,
+            max_tokens=max_tokens,
+            top_p=0.1,
+            frequency_penalty=0,
+            presence_penalty=0,
+            response_format={"type": "json_object"} if json else {"type": "text"},
+        )
+        self.input_tokens += response.usage.prompt_tokens
+        self.output_tokens += response.usage.completion_tokens
+        return response.choices[0].message.content
+
+    @retry_with_exponential_backoff
+    def generate_batch(
+        self, system_prompt: str, user_prompts: List[str], max_tokens=1000, json=False
+    ) -> str:
+        """
+        Generates a text completion using OpenAI's API, with a given system and user prompt.
+        This method is decorated with retry logic to handle temporary failures.
+
+        Parameters:
+        system_prompt (str): The system prompt to provide context or instructions for the generation.
+        user_prompt (str): The user's prompt, based on which the text completion is generated.
+
+        Returns:
+        str: The generated text completion.
+        """
+        messages = [{"role": "system", "content": system_prompt}] + [
+            {"role": "user", "content": prompt} for prompt in user_prompts
+        ]
+
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
             temperature=self.temperature,
             max_tokens=max_tokens,
             top_p=0.1,
