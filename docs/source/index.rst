@@ -10,11 +10,11 @@ Welcome to databonsai's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   modules
+   databonsai
 
-Indices and tables
-==================
+.. Indices and tables
+.. ==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. * :ref:`genindex`
+.. * :ref:`modindex`
+.. * :ref:`search`
