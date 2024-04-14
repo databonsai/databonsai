@@ -95,6 +95,10 @@ Parameters:
 -   `batch_size`: The number of rows in each batch.
 -   `start_idx`: The starting index from which to begin processing.
 
+Returns:
+
+-   `success_idx`: The index of the last successful row processed.
+
 ```python
 from databonsai.utils import apply_to_column_batch, apply_to_column
 
@@ -103,8 +107,7 @@ success_idx = apply_to_column_batch( df["Headline"], df["Category"], categorizer
 ```
 
 By default, exponential backoff is used to handle rate limiting. This is handled
-in the LLM providers - [OpenAIProvider](./docs/OpenAIProvider.md) and
-[AnthropicProvider](./docs/AnthropicProvider.md).
+in the LLM providers and can be configured.
 
 If it fails midway (even after exponential backoff), you can resume from the
 last successful index + 1.
@@ -116,7 +119,8 @@ success_idx = apply_to_column_batch( df["Headline"], df["Category"], categorizer
 This also works for regular python lists.
 
 Note that the better the LLM model, the greater the batch_size you can use
-(depending on the length of your inputs).
+(depending on the length of your inputs). If you're getting errors, reduce the
+batch_size, or use a better LLM model.
 
 To use it without batching:
 
