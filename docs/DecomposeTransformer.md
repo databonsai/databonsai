@@ -100,3 +100,5 @@ Output:
     },
 ]
 ```
+
+Batching is not supported for DecopmoseTransformer yet.

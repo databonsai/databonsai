@@ -71,8 +71,15 @@ Weather
 
 ### Dataframes & Lists (Save tokens with batching!)
 
-If you have a pandas dataframe or list, you can use batch methods to save
-tokens.
+If you have a pandas dataframe or list, use `apply_to_column_batch` for some
+handy features:
+
+-   batching saves tokens by not resending the schema each time
+-   progress bar
+-   returns the last successful index so you can resume from there, in case of
+    any error (llm_provider already implements exponential backoff, but just in
+    case)
+-   modifies your output list in place, so you don't lose any progress
 
 Use the method as such:
 
@@ -89,10 +96,10 @@ Parameters:
 -   `start_idx`: The starting index from which to begin processing.
 
 ```python
-from databonsai.utils import apply_to_column_batch
+from databonsai.utils import apply_to_column_batch, apply_to_column
 
-df["Category"] = None # Initialize it if it doesn't exist
-success_idx = apply_to_column_batch( df["Headline"], df["Category"], categorizer.categorize_batch, batch_size=10) # Modifies the list in place
+df["Category"] = None # Initialize it if it doesn't exist, as we modify it in place
+success_idx = apply_to_column_batch( df["Headline"], df["Category"], categorizer.categorize_batch, batch_size=10)
 ```
 
 By default, exponential backoff is used to handle rate limiting. This is handled
@@ -100,136 +107,21 @@ in the LLM providers - [OpenAIProvider](./docs/OpenAIProvider.md) and
 [AnthropicProvider](./docs/AnthropicProvider.md).
 
 If it fails midway (even after exponential backoff), you can resume from the
-last successful index.
+last successful index + 1.
 
 ```python
-success_idx = apply_to_column_batch( df["Headline"], df["Category"], categorizer.categorize_batch, batch_size=10, start_idx=success_idx)
+success_idx = apply_to_column_batch( df["Headline"], df["Category"], categorizer.categorize_batch, batch_size=10, start_idx=success_idx+1)
 ```
 
 This also works for regular python lists.
 
-There will also be a progress bar so you can track the progress of the
-categorization.
-
-By batching multiple inputs together, you can save tokens by not resending the
-schema each time. Note that the better the LLM model, the greater the batch_size
-you can use (depending on the length of your inputs).
+Note that the better the LLM model, the greater the batch_size you can use
+(depending on the length of your inputs).
 
 To use it without batching:
 
 ```python
 success_idx = apply_to_column( df["Headline"], df["Category"], categorizer.categorize)
-```
-
-## More Tools
-
-### Multi-categorization
-
-Multiple categories can also be returned. This is useful for tagging data!
-
-```python
-tagger = MultiCategorizer(
-    categories=categories,
-    llm_provider=provider,
-)
-
-tags = tagger.categorize(
-    "It's been raining outside all day, and I saw Elon Musk. 13rewfdsacw10289u(#!*@)"  # Data has anomalies
-)
-print(tags)
-```
-
-Output:
-
-```python
-['Weather', 'Celebrities', 'Anomaly']
-```
-
-### Transformation
-
-Prepare the transformer:
-
-```python
-pii_remover = BaseTransformer(
-    prompt="Replace any Personal Identity Identifiers (PII) in the given text with <type of PII>. PII includes any information that can be used to identify an individual, such as names, addresses, phone numbers, email addresses, social security numbers, etc.",
-    llm_provider=provider,
-)
-```
-
-Run the transformation:
-
-```python
-print(
-    pii_remover.transform(
-        "John Doe, residing at 1234 Maple Street, Anytown, CA, 90210, recently contacted customer support to report an issue. He provided his phone number, (555) 123-4567, and email address, johndoe@email.com, for follow-up communication."
-    )
-)
-```
-
-Output:
-
-```python
-<Name>, residing at <Address>, <City>, <State>, <ZIP code>, recently contacted customer support to report an issue. They provided their phone number, <Phone number>, and email address, <Email address>, for follow-up communication.
-```
-
-### Decomposition
-
-Prepare a decompose transformer with a prompt and output schema.
-
-```python
-output_schema = {
-    "question": "generated question about given information",
-    "answer": "answer to the question, only using information from the given data",
-}
-
-qna = DecomposeTransformer(
-    prompt="Your goal is to create a set of questions and answers to help a person memorise every single detail of a document.",
-    output_schema=output_schema,
-    llm_provider=provider,
-)
-```
-
-Here's the text we want to decompose:
-
-```python
-text = """ Sky-gazers across North America are in for a treat on April 8 when a total solar eclipse will pass over Mexico, the United States and Canada.
-
-The event will be visible to millions — including 32 million people in the US alone — who live along the route the moon’s shadow will travel during the eclipse, known as the path of totality. For those in the areas experiencing totality, the moon will appear to completely cover the sun. Those along the very center line of the path will see an eclipse that lasts between 3½ and 4 minutes, according to NASA.
-
-The next total solar eclipse won’t be visible across the contiguous United States again until August 2044. (It’s been nearly seven years since the “Great American Eclipse” of 2017.) And an annular eclipse won’t appear across this part of the world again until 2046."""
-```
-
-Decompose the text:
-
-```python
-print(qna.transform(text))
-```
-
-Output:
-
-```python
-[
-    {
-        "question": "When will the total solar eclipse pass over Mexico, the United States, and Canada?",
-        "answer": "The total solar eclipse will pass over Mexico, the United States, and Canada on April 8.",
-    },
-    {
-        "question": "What is the path of totality?",
-        "answer": "The path of totality is the route the moon's shadow will travel during the eclipse where the moon will appear to completely cover the sun.",
-    },
-    {
-        "question": "How long will the eclipse last for those along the very center line of the path of totality?",
-        "answer": "For those along the very center line of the path of totality, the eclipse will last between 3½ and 4 minutes.",
-    },
-    {
-        "question": "When will the next total solar eclipse be visible across the contiguous United States?",
-        "answer": "The next total solar eclipse visible across the contiguous United States will be in August 2044.",
-    },
-    {
-        "question": "When will an annular eclipse next appear across the contiguous United States?",
-        "answer": "An annular eclipse won't appear across the contiguous United States again until 2046.",
-    },
-]
 ```
 
 ### View token usage
@@ -241,9 +133,26 @@ print(provder.input_tokens)
 print(provder.output_tokens)
 ```
 
-### Read More:
+## [Docs](./docs/)
 
--   [Documentation](./docs/)
+### Tools (Check out the docs for usage examples and details)
+
+-   [BaseCategorizer](./docs/BaseCategorizer.md) - categorize data into a
+    category
+-   [MultiCategorizer](./docs/MultiCategorizer.md) - categorize data into
+    multiple categories
+-   [BaseTransformer](./docs/BaseTransformer.md) - transform data with a prompt
+-   [DecomposeTransformer](./docs/DecomposeTransformer.md) - decompose data into
+    a structured format based on a schema
+
+### LLM Providers
+
+-   [OpenAIProvider](./docs/OpenAIProvider.md) - OpenAI
+-   [AnthropicProvider](./docs/AnthropicProvider.md) - Anthropic
+-   CustomProvider (TBD)
+
+### Examples (TBD)
+
 -   [Examples](./databonsai/examples/) (TBD)
 
 ### Acknowledgements

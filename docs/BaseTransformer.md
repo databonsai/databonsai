@@ -63,3 +63,48 @@ Output:
 ```python
 <Name>, residing at <Address>, <City>, <State>, <ZIP code>, recently contacted customer support to report an issue. They provided their phone number, <Phone number>, and email address, <Email address>, for follow-up communication.
 ```
+
+Transforma a list of data: (use apply_to_column_batch for large datasets)
+
+```python
+pii_texts = [
+    "Just confirmed the reservation for Amanda Clark, Passport No. B2345678, traveling to Tokyo on May 15, 2024.",
+    "Received payment from Michael Thompson, Credit Card ending in 4547, Billing Address: 45 Westview Lane, Springfield, IL.",
+    "Application received from Julia Martinez, DOB 03/19/1994, SSN 210-98-7654, applying for the marketing position.",
+    "Lease agreement finalized for Henry Wilson, Tenant ID: WILH12345, property at 89 Riverside Drive, Brooklyn, NY.",
+    "Registration details for Lucy Davis, Student ID 20231004, enrolled in Advanced Chemistry, Fall semester.",
+    "David Lee called about his insurance claim, Policy #9988776655, regarding the accident on April 5th.",
+    "Booking confirmation for Sarah H. Richards, Flight AC202, Seat 14C, Frequent Flyer #GH5554321, departing June 12, 2024.",
+    "Kevin Brown's gym membership has been renewed, Member ID: 654321, Phone: (555) 987-6543, Email: kbrown@example.com.",
+    "Prescription ready for Emma Thomas, Health ID 567890123, prescribed by Dr. Susan Hill on April 10th, 2024.",
+    "Alice Johnson requested a copy of her employment contract, Employee No. 112233, hired on August 1st, 2023.",
+]
+
+cleaned_texts = pii_remover.transform_batch(pii_texts)
+print(cleaned_texts)
+```
+
+Output:
+
+```python
+['Just confirmed the reservation for <type of PII>, Passport No. <type of PII>, traveling to Tokyo on May 15, 2024.', 'Received payment from <type of PII>, Credit Card ending in <type of PII>, Billing Address: 45 Westview Lane, Springfield, IL.', 'Application received from <type of PII>, DOB 03/19/1994, SSN <type of PII>, applying for the marketing position.', 'Lease agreement finalized for <type of PII>, Tenant ID: WILH12345, property at 89 Riverside Drive, Brooklyn, NY.', 'Registration details for <type of PII>, Student ID 20231004, enrolled in Advanced Chemistry, Fall semester.', '<type of PII> called about his insurance claim, Policy #9988776655, regarding the accident on April 5th.', 'Booking confirmation for <type of PII>, Flight AC202, Seat 14C, Frequent Flyer #GH5554321, departing June 12, 2024.', "Kevin Brown's gym membership has been renewed, Member ID: 654321, Phone: (555) 987-6543, Email: kbrown@example.com.", 'Prescription ready for <type of PII>, Health ID 567890123, prescribed by Dr. Susan Hill on April 10th, 2024.', 'Alice Johnson requested a copy of her employment contract, Employee No. 112233, hired on August 1st, 2023.']
+```
+
+Transform a long list of data or a dataframe column (with batching):
+
+```python
+from databonsai.utils import apply_to_column_batch, apply_to_column
+
+cleaned_texts = []
+success_idx = apply_to_column_batch(
+    pii_texts, cleaned_texts, pii_remover.transform_batch, 4, 0
+)
+```
+
+Without batching:
+
+```
+success_idx = apply_to_column(
+    pii_texts, cleaned_texts, pii_remover.transform
+)
+```

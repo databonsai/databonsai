@@ -129,7 +129,7 @@ class OpenAIProvider(LLMProvider):
         messages = [{"role": "system", "content": system_prompt}] + [
             {"role": "user", "content": prompt} for prompt in user_prompts
         ]
-
+        # print(messages)
         response = self.client.chat.completions.create(
             model=self.model,
             messages=messages,

@@ -32,6 +32,25 @@ provider.
 -   `ValueError`: If the predicted categories are not a subset of the provided
     categories.
 
+### categorize_batch
+
+Categorizes all of the input data using the specified LLM provider. Do not give
+too large a list as input. Instead, use `apply_to_column_batch` to handle large
+datasets.
+
+#### Arguments
+
+-   `input_data List[str]`: List of text data to be categorized
+
+#### Returns
+
+-   `List[str]`: The predicted categories for the input data.
+
+#### Raises
+
+-   `ValueError`: If the predicted category is not among the provided
+    categories.
+
 ## Usage
 
 Setup the LLM provider and categories (as a dictionary):
@@ -65,4 +84,53 @@ Output:
 
 ```python
 ['Weather', 'Celebrities', 'Anomaly']
+```
+
+Categorize a list of data:
+
+```python
+mixed_headlines = [
+    "Storm Delays Government Budget Meeting, Weather and Politics Clash",
+    "Olympic Star's Controversial Tweets Ignite Political Debate, Sports Meets Politics",
+    "Local Football Hero Opens New Gym, Sports and Business Combine",
+    "Tech CEO's Groundbreaking Climate Initiative, Technology and Environment at Forefront",
+    "Celebrity Chef Fights for Food Security Legislation, Culinary Meets Politics",
+    "Hollywood Biopic of Legendary Athlete Set to Premiere, Blending Sports and Cinema",
+    "Massive Flooding Disrupts Local Elections, Intersection of Weather and Politics",
+    "Tech Billionaire Invests in Sports Teams, Merging Business with Athletics",
+    "Pop Star's Concert Raises Funds for Disaster Relief, Combining Music with Charity",
+    "Film Festival Highlights Environmental Documentaries, Merging Cinema and Green Activism",
+]
+categories = tagger.categorize_batch(mixed_headlines)
+```
+
+Output:
+
+```python
+['Weather,Politics', 'Sports,Politics', 'Sports,Others', 'Tech', 'Politics,Celebrities', 'Sports,Celebrities', 'Weather,Politics', 'Tech,Sports', 'Celebrities,Others', 'Celebrities,Others']
+```
+
+Categorize a long list of data, or a dataframe column (with batching):
+
+```python
+from databonsai.utils import apply_to_column_batch, apply_to_column
+
+categories = []
+success_idx = apply_to_column_batch(
+    input_column=mixed_headlines,
+    output_column=categories,
+    function=tagger.categorize_batch,
+    batch_size=3,
+    start_idx=0
+)
+```
+
+Without batching:
+
+```python
+success_idx = apply_to_column(
+    input_column=mixed_headlines,
+    output_column=categories,
+    function=tagger.categorize
+)
 ```

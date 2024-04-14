@@ -39,6 +39,25 @@ Categorizes the input data using the specified LLM provider.
 -   `ValueError`: If the predicted category is not among the provided
     categories.
 
+### categorize_batch
+
+Categorizes all of the input data using the specified LLM provider. Do not give
+too large a list as input. Instead, use `apply_to_column_batch` to handle large
+datasets.
+
+#### Arguments
+
+-   `input_data List[str]`: List of text data to be categorized
+
+#### Returns
+
+-   `List[str]`: The predicted categories for the input data.
+
+#### Raises
+
+-   `ValueError`: If the predicted category is not among the provided
+    categories.
+
 ## Usage
 
 Setup the LLM provider and categories (as a dictionary)
@@ -72,4 +91,59 @@ Output:
 
 ```python
 Weather
+```
+
+Categorize a few inputs:
+
+```python
+categories = categorizer.categorize([
+    "Storm Delays Government Budget Meeting, Weather and Politics Clash",
+    "Olympic Star's Controversial Tweets Ignite Political Debate, Sports Meets Politics",
+    "Local Football Hero Opens New Gym, Sports and Business Combine"])
+print(categories)
+```
+
+Output:
+
+```python
+Weather
+```
+
+Categorize a list of inputs (Use shorter lists for weaker LLMs):
+
+```python
+headlines = [
+    "Massive Blizzard Hits the Northeast, Thousands Without Power",
+    "Local High School Basketball Team Wins State Championship After Dramatic Final",
+    "Celebrated Actor Launches New Environmental Awareness Campaign",
+    "President Announces Comprehensive Plan to Combat Cybersecurity Threats",
+    "Tech Giant Unveils Revolutionary Quantum Computer",
+    "Tropical Storm Alina Strengthens to Hurricane as It Approaches the Coast",
+    "Olympic Gold Medalist Announces Retirement, Plans Coaching Career",
+    "Film Industry Legends Team Up for Blockbuster Biopic",
+    "Government Proposes Sweeping Reforms in Public Health Sector",
+    "Startup Develops App That Predicts Traffic Patterns Using AI",
+]
+categories = categorizer.categorize_batch(headlines)
+print(categories)
+```
+
+Output:
+
+```python
+['Weather', 'Sports', 'Celebrities', 'Politics', 'Tech', 'Weather', 'Sports', 'Celebrities', 'Politics', 'Tech']
+```
+
+Categorize a long list of inputs, or a dataframe column:
+
+```python
+from databonsai.utils import apply_to_column_batch, apply_to_column
+
+success_idx = apply_to_column_batch(headlines, categories, categorizer.categorize, 3, 0)
+```
+
+Without batching:
+
+```python
+success_idx = apply_to_column(headlines, categories, categorizer.categorize)
 ```

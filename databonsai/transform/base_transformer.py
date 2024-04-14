@@ -74,14 +74,16 @@ class BaseTransformer(BaseModel):
         Use the following prompt to transform each input data:
         Prompt: {self.prompt}
         
-        Respond with the transformed data for each input, separated by ##.
+        Respond with the transformed data for each input, separated by ##. Do not make any other conversation.
+        Example:
+        <transformed data 1>##<transformed data 2>##<transformed data 3>
         """
 
         # Call the LLM provider to perform the batch transformation
         response = self.llm_provider.generate_batch(
             system_message, input_data, max_tokens=max_tokens
         )
-
+        # print(response)
         # Split the response into individual transformed data
         transformed_data_list = response.split("##")
 
@@ -89,6 +91,6 @@ class BaseTransformer(BaseModel):
         transformed_data_list = [data.strip() for data in transformed_data_list]
         if len(transformed_data_list) != len(input_data):
             raise ValueError(
-                f"Number of predicted categories ({len(transformed_data_list)}) does not match the number of input data ({len(input_data)})."
+                f"Length of output list ({len(transformed_data_list)}) does not match the length of input list ({len(input_data)})."
             )
         return transformed_data_list
