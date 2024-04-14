@@ -74,13 +74,30 @@ Weather
 If you have a pandas dataframe or list, you can use batch methods to save
 tokens.
 
+Use the method as such:
+
 ```python
+success_idx = apply_to_column_batch(input_column, output_column, function, batch_size, start_idx)
+```
+
+Parameters:
+
+-   `input_column`: The name of the column from which data will be read.
+-   `output_column`: The name of the column to which data will be written.
+-   `function`: The function to apply to each batch of data.
+-   `batch_size`: The number of rows in each batch.
+-   `start_idx`: The starting index from which to begin processing.
+
+```python
+from databonsai.utils import apply_to_column_batch
+
 df["Category"] = None # Initialize it if it doesn't exist
 success_idx = apply_to_column_batch( df["Headline"], df["Category"], categorizer.categorize_batch, batch_size=10) # Modifies the list in place
 ```
 
-By default, exponential backoff is used to handle rate limiting.
-[Read more here](docs/llm_providers.md)
+By default, exponential backoff is used to handle rate limiting. This is handled
+in the LLM providers - [OpenAIProvider](./docs/OpenAIProvider.md) and
+[AnthropicProvider](./docs/AnthropicProvider.md).
 
 If it fails midway (even after exponential backoff), you can resume from the
 last successful index.
