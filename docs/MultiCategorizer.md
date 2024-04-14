@@ -128,6 +128,7 @@ success_idx = apply_to_column_batch(
 Without batching:
 
 ```python
+categories = []
 success_idx = apply_to_column(
     input_column=mixed_headlines,
     output_column=categories,

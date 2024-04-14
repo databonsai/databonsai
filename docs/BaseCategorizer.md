@@ -139,11 +139,13 @@ Categorize a long list of inputs, or a dataframe column:
 ```python
 from databonsai.utils import apply_to_column_batch, apply_to_column
 
+categories = []
 success_idx = apply_to_column_batch(headlines, categories, categorizer.categorize, 3, 0)
 ```
 
 Without batching:
 
 ```python
+categories = []
 success_idx = apply_to_column(headlines, categories, categorizer.categorize)
 ```

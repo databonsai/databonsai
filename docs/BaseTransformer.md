@@ -104,6 +104,7 @@ success_idx = apply_to_column_batch(
 Without batching:
 
 ```
+cleaned_texts = []
 success_idx = apply_to_column(
     pii_texts, cleaned_texts, pii_remover.transform
 )
