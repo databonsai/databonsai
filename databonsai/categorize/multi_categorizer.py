@@ -86,14 +86,9 @@ class MultiCategorizer(BaseCategorizer):
             predicted_categories = [
                 category.strip() for category in category_set.split("||")
             ]
-
-            for predicted_category in predicted_categories:
-                if predicted_category not in self.categories:
-                    raise ValueError(
-                        f"Predicted category '{predicted_category}' is not one of the provided categories."
-                    )
-
-            predicted_categories_str = ",".join(predicted_categories)
+            predicted_categories_str = ",".join(
+                self.validate_predicted_categories(predicted_categories)
+            )
             predicted_categories_list.append(predicted_categories_str)
 
         return predicted_categories_list

@@ -1,6 +1,8 @@
 from typing import Dict, List
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from databonsai.llm_providers import OpenAIProvider, LLMProvider
+from pydantic import ConfigDict
+from pydantic.dataclasses import dataclass
 
 
 class BaseCategorizer(BaseModel):
@@ -19,7 +21,7 @@ class BaseCategorizer(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    @validator("categories")
+    @field_validator("categories")
     def validate_categories(cls, v):
         """
         Validates the categories dictionary.
@@ -91,18 +93,22 @@ class BaseCategorizer(BaseModel):
         Each category is formatted as <category>: <description of data that fits the category>
         {str(self.categories)}
         Classify each given text snippet into one of the following categories:
-        {str(list(self.categories.keys()))}. If there are multiple snippets, separate each category with ||. Example input: <Snippet 1>  Response: <Category 1> Example input: <Snippet 1>, <Snippet 2>, <Snippet 3>  Response: <Category 1> || <Category 2> || <Category 3>
+        {str(list(self.categories.keys()))}. If there are multiple snippets, separate each category with ||. 
+        EXAMPLE: <Text about category 1>  RESPONSE: <Category 1> 
+        EXAMPLE: <Text about category 1>, <Text about category 2> RESPONSE: <Category 1> || <Category 2>
+        Choose one category for each text snippet. think carefully.
         Only reply with the categories. Do not make any other conversation.
         """
         # Call the LLM provider to get the predicted category
         response = self.llm_provider.generate_batch(system_message, input_data)
-        print(response)
         predicted_categories = [category.strip() for category in response.split("||")]
-        print(predicted_categories)
         if len(predicted_categories) != len(input_data):
             raise ValueError(
                 f"Number of predicted categories ({len(predicted_categories)}) does not match the number of input data ({len(input_data)})."
             )
+        return self.validate_predicted_categories(predicted_categories)
+
+    def validate_predicted_categories(self, predicted_categories: str):
         for predicted_category in predicted_categories:
             if predicted_category not in self.categories:
                 raise ValueError(

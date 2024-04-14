@@ -25,7 +25,7 @@ def apply_to_column(
         int: The index of the last successfully processed value.
 
     """
-    if not input_column:
+    if len(input_column) == 0:
         raise ValueError("Input input_column is empty.")
 
     if start_idx >= len(input_column):
@@ -118,8 +118,6 @@ def apply_to_column_batch(
 
     success_idx = start_idx
 
-    success_idx = start_idx
-
     if isinstance(func.__self__, BaseCategorizer):
         desc = "Categorizing"
     elif isinstance(func.__self__, BaseTransformer):
@@ -131,18 +129,17 @@ def apply_to_column_batch(
         for i in tqdm(
             range(start_idx, len(input_column), batch_size), desc=desc, unit="batch"
         ):
-            batch = input_column[i : i + batch_size]
+            batch_end = min(i + batch_size, len(input_column))
+            batch = input_column[i:batch_end]
             batch_result = func(batch)
-
             if i >= len(output_column):
                 output_column.extend(batch_result)
             else:
                 output_column[i : i + len(batch_result)] = batch_result
-
-            success_idx = i + batch_size
+            success_idx = batch_end
     except Exception as e:
         print(f"Error occurred at batch starting at index {success_idx}: {str(e)}")
         print(f"Processing stopped at batch ending at index {success_idx - 1}")
         return success_idx
 
-    return success_idx
+    return min(success_idx, len(input_column))

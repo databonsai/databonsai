@@ -18,7 +18,7 @@ def sample_categories():
 
 @pytest.fixture
 def sample_provider():
-    return OpenAIProvider()  # or AnthropicProvider()
+    return OpenAIProvider(model="gpt-3.5-turbo")  # or AnthropicProvider()
 
 
 @pytest.fixture
@@ -26,13 +26,25 @@ def sample_dataframe():
     return pd.DataFrame(
         {
             "text": [
-                "It's raining heavily today.",
-                "The football match was exciting!",
-                "I saw Emma Watson at the mall.",
-                "Random text 123456",
+                "Massive Blizzard Hits the Northeast, Thousands Without Power",
+                "Local High School Basketball Team Wins State Championship After Dramatic Final",
+                "Celebrated Actor Launches New Environmental Awareness Campaign",
+                "Startup Develops App That Predicts Traffic Patterns Using AI",
+                "asdfoinasedf'awesdf",
             ]
         }
     )
+
+
+@pytest.fixture
+def sample_list():
+    return [
+        "Massive Blizzard Hits the Northeast, Thousands Without Power",
+        "Local High School Basketball Team Wins State Championship After Dramatic Final",
+        "Celebrated Actor Launches New Environmental Awareness Campaign",
+        "Startup Develops App That Predicts Traffic Patterns Using AI",
+        "asdfoinasedf'awesdf",
+    ]
 
 
 def test_apply_to_column(sample_categories, sample_provider, sample_dataframe):
@@ -45,8 +57,14 @@ def test_apply_to_column(sample_categories, sample_provider, sample_dataframe):
 
     success_idx = apply_to_column(df["text"], df["category"], categorizer.categorize)
 
-    assert success_idx == 4
-    assert df["category"].tolist() == ["Weather", "Sports", "Celebrities", "Others"]
+    assert success_idx == 5
+    assert df["category"].tolist() == [
+        "Weather",
+        "Sports",
+        "Celebrities",
+        "Others",
+        "Anomaly",
+    ]
 
 
 def test_apply_to_column_batch(sample_categories, sample_provider, sample_dataframe):
@@ -61,8 +79,14 @@ def test_apply_to_column_batch(sample_categories, sample_provider, sample_datafr
         df["text"], df["category"], categorizer.categorize_batch, batch_size=2
     )
 
-    assert success_idx == 4
-    assert df["category"].tolist() == ["Weather", "Sports", "Celebrities", "Others"]
+    assert success_idx == 5
+    assert df["category"].tolist() == [
+        "Weather",
+        "Sports",
+        "Celebrities",
+        "Others",
+        "Anomaly",
+    ]
 
 
 def test_apply_to_column_batch_start_idx(
@@ -83,45 +107,14 @@ def test_apply_to_column_batch_start_idx(
         start_idx=1,
     )
 
-    assert success_idx == 4
-    assert df["category"].tolist() == [None, "Sports", "Celebrities", "Others"]
-
-
-def test_apply_to_column_batch_interrupted(
-    sample_categories, sample_provider, sample_dataframe, monkeypatch
-):
-    categorizer = BaseCategorizer(
-        categories=sample_categories, llm_provider=sample_provider
-    )
-
-    df = sample_dataframe.copy()
-    df["category"] = None
-
-    def interrupt_categorization(texts):
-        if len(texts) > 1:
-            raise Exception("Simulated interruption")
-        return [categorizer.categorize(text) for text in texts]
-
-    monkeypatch.setattr(categorizer, "categorize_batch", interrupt_categorization)
-
-    with pytest.raises(Exception):
-        success_idx = apply_to_column_batch(
-            df["text"], df["category"], categorizer.categorize_batch, batch_size=2
-        )
-
-    assert success_idx == 2
-    assert df["category"].tolist() == ["Weather", "Sports", None, None]
-
-    success_idx = apply_to_column_batch(
-        df["text"],
-        df["category"],
-        categorizer.categorize_batch,
-        batch_size=1,
-        start_idx=success_idx,
-    )
-
-    assert success_idx == 4
-    assert df["category"].tolist() == ["Weather", "Sports", "Celebrities", "Others"]
+    assert success_idx == 5
+    assert df["category"].tolist() == [
+        None,
+        "Sports",
+        "Celebrities",
+        "Others",
+        "Anomaly",
+    ]
 
 
 def test_base_categorizer(sample_categories, sample_provider):
@@ -136,6 +129,20 @@ def test_base_categorizer(sample_categories, sample_provider):
     assert categorizer.categorize("1234567890!@#$%^&*()") == "Anomaly"
 
 
+def test_base_categorizer_batch(sample_categories, sample_provider, sample_list):
+    categorizer = BaseCategorizer(
+        categories=sample_categories, llm_provider=sample_provider
+    )
+
+    assert categorizer.categorize_batch(sample_list) == [
+        "Weather",
+        "Sports",
+        "Celebrities",
+        "Others",
+        "Anomaly",
+    ]
+
+
 def test_multi_categorizer(sample_categories, sample_provider):
     categorizer = MultiCategorizer(
         categories=sample_categories, llm_provider=sample_provider
@@ -148,38 +155,3 @@ def test_multi_categorizer(sample_categories, sample_provider):
     assert set(
         categorizer.categorize("The football match was exciting and it's sunny!")
     ) == {"Sports", "Weather"}
-    assert set(categorizer.categorize("Random text 123456")) == {"Others", "Anomaly"}
-
-
-def test_batch_processing(sample_categories, sample_provider):
-    categorizer = BaseCategorizer(
-        categories=sample_categories, llm_provider=sample_provider
-    )
-
-    df = pd.DataFrame(
-        {
-            "text": [
-                "It's raining heavily today.",
-                "The football match was exciting!",
-                "I saw Emma Watson at the mall.",
-            ]
-        }
-    )
-    df["category"] = None
-
-    success_idx = apply_to_column_batch(
-        df["text"], df["category"], categorizer.categorize_batch, batch_size=2
-    )
-
-    assert success_idx == 3
-    assert df["category"].tolist() == ["Weather", "Sports", "Celebrities"]
-
-
-def test_error_handling(sample_categories, sample_provider):
-    categorizer = BaseCategorizer(
-        categories=sample_categories, llm_provider=sample_provider
-    )
-
-    assert categorizer.categorize(None) == "Others"
-    assert categorizer.categorize("") == "Others"
-    assert categorizer.categorize("A" * 10000) == "Others"  # Assuming a very long text

@@ -1,5 +1,5 @@
 from typing import Dict, List
-from pydantic import validator
+from pydantic import field_validator
 from databonsai.transform.base_transformer import BaseTransformer
 
 
@@ -19,7 +19,7 @@ class DecomposeTransformer(BaseTransformer):
 
     output_schema: Dict[str, str]
 
-    @validator("output_schema")
+    @field_validator("output_schema")
     def validate_schema(cls, v):
         """
         Validates the output schema.

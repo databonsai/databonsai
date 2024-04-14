@@ -127,7 +127,8 @@ class OpenAIProvider(LLMProvider):
         str: The generated text completion.
         """
         messages = [{"role": "system", "content": system_prompt}] + [
-            {"role": "user", "content": prompt} for prompt in user_prompts
+            {"role": "user", "content": f"Content {idx+1}: " + prompt}
+            for idx, prompt in enumerate(user_prompts)
         ]
         # print(messages)
         response = self.client.chat.completions.create(

@@ -16,6 +16,7 @@ setup(
         "tenacity",
         "python-dotenv",
         "pydantic",
+        "anthropic",
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",

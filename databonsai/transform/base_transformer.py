@@ -1,5 +1,5 @@
 from typing import List
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from databonsai.llm_providers import LLMProvider
 
 
@@ -19,7 +19,7 @@ class BaseTransformer(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    @validator("prompt")
+    @field_validator("prompt")
     def validate_prompt(cls, v):
         """
         Validates the prompt.
