@@ -243,7 +243,7 @@ print(provder.output_tokens)
 
 ### Read More:
 
--   [Documentation](./databonsai/docs/)
+-   [Documentation](./docs/)
 -   [Examples](./databonsai/examples/) (TBD)
 
 ### Acknowledgements
