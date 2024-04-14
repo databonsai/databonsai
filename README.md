@@ -99,11 +99,27 @@ Returns:
 
 -   `success_idx`: The index of the last successful row processed.
 
+(Continued from the previous code example)
+
 ```python
 from databonsai.utils import apply_to_column_batch, apply_to_column
+import pandas as pd
 
+headlines = [
+    "Massive Blizzard Hits the Northeast, Thousands Without Power",
+    "Local High School Basketball Team Wins State Championship After Dramatic Final",
+    "Celebrated Actor Launches New Environmental Awareness Campaign",
+    "President Announces Comprehensive Plan to Combat Cybersecurity Threats",
+    "Tech Giant Unveils Revolutionary Quantum Computer",
+    "Tropical Storm Alina Strengthens to Hurricane as It Approaches the Coast",
+    "Olympic Gold Medalist Announces Retirement, Plans Coaching Career",
+    "Film Industry Legends Team Up for Blockbuster Biopic",
+    "Government Proposes Sweeping Reforms in Public Health Sector",
+    "Startup Develops App That Predicts Traffic Patterns Using AI",
+]
+df = pd.DataFrame(headlines, columns=["Headline"])
 df["Category"] = None # Initialize it if it doesn't exist, as we modify it in place
-success_idx = apply_to_column_batch( df["Headline"], df["Category"], categorizer.categorize_batch, batch_size=10)
+success_idx = apply_to_column_batch( df["Headline"], df["Category"], categorizer.categorize_batch, batch_size=3, start_idx=0)
 ```
 
 By default, exponential backoff is used to handle rate limiting. This is handled
