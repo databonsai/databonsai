@@ -113,7 +113,6 @@ class OpenAIProvider(LLMProvider):
         )
         self.input_tokens += response.usage.prompt_tokens
         self.output_tokens += response.usage.completion_tokens
-        print(response.choices[0].message.content)
         return response.choices[0].message.content
 
     # @retry_with_exponential_backoff
@@ -155,5 +154,4 @@ class OpenAIProvider(LLMProvider):
         )
         self.input_tokens += response.usage.prompt_tokens
         self.output_tokens += response.usage.completion_tokens
-        print(response.choices[0].message.content)
         return response.choices[0].message.content

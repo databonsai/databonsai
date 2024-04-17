@@ -4,47 +4,92 @@ The `BaseTransformer` class is a base class for transforming input data using a
 specified LLM provider. It provides a foundation for implementing data
 transformation tasks using language models.
 
+## Features
+
+-   **Transformation Prompts**: Define your own prompts to guide the
+    transformation process.
+-   **Input Validation**: Ensures the integrity of prompts, examples, and input
+    data for reliable transformation.
+-   **Few-Shot Learning**: Supports providing example inputs and responses to
+    improve transformation accuracy.
+-   **Batch Transformation**: Transforms multiple inputs simultaneously for
+    token savings.
+
 ## Attributes
 
--   `prompt (str)`: The prompt used to guide the transformation process. It
+-   `prompt` (str): The prompt used to guide the transformation process. It
     provides instructions or context for the LLM provider to perform the desired
     transformation.
--   `llm_provider (LLMProvider)`: An instance of an LLM provider to be used for
+-   `llm_provider` (LLMProvider): An instance of an LLM provider to be used for
     transformation. The LLM provider is responsible for generating the
     transformed data based on the input data and the provided prompt.
+-   `examples` (Optional[List[Dict[str, str]]]): A list of example inputs and
+    their corresponding transformed outputs to improve transformation accuracy.
+
+## Computed Fields
+
+-   `system_message` (str): A system message used for single input
+    transformation based on the provided prompt and examples.
+-   `system_message_batch` (str): A system message used for batch input
+    transformation based on the provided prompt and examples.
 
 ## Methods
 
 ### `transform`
 
-The `transform` method transforms the input data using the specified LLM
-provider.
+Transforms the input data using the specified LLM provider.
 
 #### Arguments
 
--   `input_data (str)`: The text data to be transformed.
--   `max_tokens (int, optional)`: The maximum number of tokens to generate in
+-   `input_data` (str): The text data to be transformed.
+-   `max_tokens` (int, optional): The maximum number of tokens to generate in
     the response. Defaults to 1000.
 
 #### Returns
 
 -   `str`: The transformed data.
 
-## Validation
+### `transform_batch`
 
-The `BaseTransformer` class includes a validator for the `prompt` attribute:
+Transforms a batch of input data using the specified LLM provider.
 
--   `validate_prompt(cls, v)`: Validates the prompt to ensure it is not empty.
-    If the prompt is empty, a `ValueError` is raised.
+#### Arguments
+
+-   `input_data` (List[str]): A list of text data to be transformed.
+-   `max_tokens` (int, optional): The maximum number of tokens to generate in
+    each response. Defaults to 1000.
+
+#### Returns
+
+-   `List[str]`: A list of transformed data, where each element corresponds to
+    the transformed version of the respective input data.
+
+#### Raises
+
+-   `ValueError`: If the length of the output list does not match the length of
+    the input list.
 
 ## Usage
 
 Prepare the transformer:
 
 ```python
+from databonsai.llm_providers import OpenAIProvider
+from databonsai.transform import BaseTransformer
+
 pii_remover = BaseTransformer(
     prompt="Replace any Personal Identity Identifiers (PII) in the given text with <type of PII>. PII includes any information that can be used to identify an individual, such as names, addresses, phone numbers, email addresses, social security numbers, etc.",
-    llm_provider=provider,
+    llm_provider=AnthropicProvider(),
+    examples=[
+        {
+            "example": "My name is John Doe and my phone number is (555) 123-4567.",
+            "response": "My name is <Name> and my phone number is <Phone number>.",
+        },
+        {
+            "example": "My email address is johndoe@gmail.com.",
+            "response": "My email address is <Email address>.",
+        },
+    ],
 )
 ```
 
