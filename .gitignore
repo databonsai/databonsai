@@ -5,3 +5,5 @@ venv
 dist/
 databonsai.egg-info/
 build/
+docs/source/
+docs/build/

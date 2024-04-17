@@ -2,8 +2,9 @@
 
 The `MultiCategorizer` class is an extension of the `BaseCategorizer` class,
 providing functionality for categorizing input data into multiple categories
-using a specified LLM provider. This class overrides the `categorize` method to
-enable the prediction of multiple categories for a given input.
+using a specified LLM provider. This class overrides the `categorize` and
+`categorize_batch` methods to enable the prediction of multiple categories for a
+given input.
 
 ## Features
 
@@ -11,6 +12,26 @@ enable the prediction of multiple categories for a given input.
     predefined categories.
 -   **Subset Validation**: Ensures that the predicted categories are a subset of
     the provided categories.
+-   **Batch Categorization**: Categorizes multiple inputs simultaneously for
+    token savings.
+
+## Attributes
+
+-   `categories` (Dict[str, str]): A dictionary mapping category names to their
+    descriptions. This structure allows for a clear definition of possible
+    categories for classification.
+-   `llm_provider` (LLMProvider): An instance of an LLM provider to be used for
+    categorization.
+-   `examples` (Optional[List[Dict[str, str]]]): A list of example inputs and
+    their corresponding categories to improve categorization accuracy. If there
+    are multiple categories for an example, they should be separated by commas.
+
+## Computed Fields
+
+-   `system_message` (str): A system message used for single input
+    categorization based on the provided categories and examples.
+-   `system_message_batch` (str): A system message used for batch input
+    categorization based on the provided categories and examples.
 
 ## Methods
 
@@ -21,35 +42,37 @@ provider.
 
 #### Arguments
 
--   `input_data (str)`: The text data to be categorized.
+-   `input_data` (str): The text data to be categorized.
 
 #### Returns
 
--   `List[str]`: A list of predicted categories for the input data.
+-   `str`: A string of categories for the input data, separated by commas.
 
 #### Raises
 
 -   `ValueError`: If the predicted categories are not a subset of the provided
     categories.
 
-### categorize_batch
+### `categorize_batch`
 
-Categorizes all of the input data using the specified LLM provider. Do not give
-too large a list as input. Instead, use `apply_to_column_batch` to handle large
-datasets.
+Categorizes a batch of input data into multiple categories using the specified
+LLM provider. For less advanced LLMs, call this method on batches of 3-5 inputs
+(depending on the length of the input data).
 
 #### Arguments
 
--   `input_data List[str]`: List of text data to be categorized
+-   `input_data` (List[str]): A list of text data to be categorized.
 
 #### Returns
 
--   `List[str]`: The predicted categories for the input data.
+-   `List[str]`: A list of predicted categories for each input data. If there
+    are multiple categories for an input, they will be separated by commas.
 
 #### Raises
 
--   `ValueError`: If the predicted category is not among the provided
-    categories.
+-   `ValueError`: If the predicted categories are not a subset of the provided
+    categories or if the number of predicted category sets does not match the
+    number of input data.
 
 ## Usage
 
@@ -61,23 +84,31 @@ from databonsai.llm_providers import OpenAIProvider, AnthropicProvider
 
 provider = OpenAIProvider()  # Or AnthropicProvider()
 categories = {
-   "Weather": "Insights and remarks about weather conditions.",
-   "Sports": "Observations and comments on sports events.",
-   "Celebrities": "Celebrity sightings and gossip",
-   "Others": "Comments do not fit into any of the above categories",
-   "Anomaly": "Data that does not look like comments or natural language",
+    "Weather": "Insights and remarks about weather conditions.",
+    "Sports": "Observations and comments on sports events.",
+    "Celebrities": "Celebrity sightings and gossip",
+    "Others": "Comments do not fit into any of the above categories",
+    "Anomaly": "Data that does not look like comments or natural language",
 }
-
 
 tagger = MultiCategorizer(
     categories=categories,
     llm_provider=provider,
+    examples=[
+        {
+            "example": "Big stormy skies over city causes league football game to be cancelled",
+            "response": "Weather,Sports",
+        },
+        {
+            "example": "Elon musk likes to play golf",
+            "response": "Sports,Celebrities",
+        },
+    ],
 )
-
-tags = tagger.categorize(
-    "It's been raining outside all day, and I saw Elon Musk. 13rewfdsacw10289u(#!*@)"  # Data has anomalies
+categories = tagger.categorize(
+    "It's been raining outside all day, and I saw Elon Musk. 13rewfdsacw10289u(#!*@)"
 )
-print(tags)
+print(categories)
 ```
 
 Output:

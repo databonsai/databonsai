@@ -42,14 +42,20 @@ Setup the LLM provider and categories (as a dictionary)
 from databonsai.categorize import MultiCategorizer, BaseCategorizer
 from databonsai.llm_providers import OpenAIProvider, AnthropicProvider
 
-provider = OpenAIProvider()  # Or AnthropicProvider()
+provider = OpenAIProvider()  # Or AnthropicProvider(). Works best with gpt-4-turbo or any claude model
 categories = {
     "Weather": "Insights and remarks about weather conditions.",
     "Sports": "Observations and comments on sports events.",
+    "Politics": "Political events related to governments, nations, or geopolitical issues.",
     "Celebrities": "Celebrity sightings and gossip",
     "Others": "Comments do not fit into any of the above categories",
     "Anomaly": "Data that does not look like comments or natural language",
 }
+few_shot_examples = [
+        {"example": "Big stormy skies over city", "response": "Weather"},
+        {"example": "The team won the championship", "response": "Sports"},
+        {"example": "I saw a famous rapper at the mall", "response": "Celebrities"},
+    ],
 ```
 
 Categorize your data:
@@ -58,6 +64,8 @@ Categorize your data:
 categorizer = BaseCategorizer(
     categories=categories,
     llm_provider=provider,
+    examples = few_shot_examples
+
 )
 category = categorizer.categorize("It's been raining outside all day")
 print(category)
@@ -69,12 +77,31 @@ Output:
 Weather
 ```
 
-### Dataframes & Lists (Save tokens with batching!)
+Use categorize_batch to categorize a batch. This saves tokens as it only sends
+the schema and few shot examples once! (Works best for better models. Ideally,
+use at least 3 few shot examples.)
+
+```python
+categories = categorizer.categorize_batch([
+    "Massive Blizzard Hits the Northeast, Thousands Without Power",
+    "Local High School Basketball Team Wins State Championship After Dramatic Final",
+    "Celebrated Actor Launches New Environmental Awareness Campaign",
+])
+print(categories)
+```
+
+Output:
+
+```python
+['Weather', 'Sports', 'Celebrities']
+```
+
+### Dataframes & Lists
 
 If you have a pandas dataframe or list, use `apply_to_column_batch` for some
 handy features:
 
--   batching saves tokens by not resending the schema each time
+-   batching saves tokens by not resending the schema each time.
 -   progress bar
 -   returns the last successful index so you can resume from there, in case of
     any error (llm_provider already implements exponential backoff, but just in
@@ -144,11 +171,18 @@ To use it without batching:
 success_idx = apply_to_column( df["Headline"], df["Category"], categorizer.categorize)
 ```
 
+### View System Prompt
+
+```python
+print(categorizer.system_message)
+print(categorizer.system_message_batch)
+```
+
 ### View token usage
 
 Token usage is recorded for each provider. Use these to estimate your costs!
 
-```
+```python
 print(provder.input_tokens)
 print(provder.output_tokens)
 ```

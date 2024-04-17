@@ -7,28 +7,36 @@ categorization tasks where inputs are classified into predefined categories.
 ## Features
 
 -   **Custom Categories**: Define your own categories for data classification.
--   **Input Validation**: Ensures the integrity of categories and input data for
-    reliable categorization.
+-   **Input Validation**: Ensures the integrity of categories, examples, and
+    input data for reliable categorization.
+-   **Batch Categorization**: Categorizes multiple inputs simultaneously for
+    token savings
 
 ## Attributes
 
--   `categories`: A dictionary (`Dict[str, str]`) mapping category names to
-    their descriptions. This structure allows for a clear definition of possible
+-   `categories` (Dict[str, str]): A dictionary mapping category names to their
+    descriptions. This structure allows for a clear definition of possible
     categories for classification.
--   `llm_provider`: An instance of `LLMProvider`. This is the model that
-    performs the actual categorization based on the input data.
+-   `llm_provider` (LLMProvider): An instance of an LLM provider to be used for
+    categorization.
+-   `examples` (Optional[List[Dict[str, str]]]): A list of example inputs and
+    their corresponding categories to improve categorization accuracy.
 
-categorize Categorizes the input data using the specified LLM provider.
+## Computed Fields
+
+-   `system_message` (str): A system message used for single input
+    categorization based on the provided categories and examples.
+-   `system_message_batch` (str): A system message used for batch input
 
 ## Methods
 
-### categorize
+### `categorize`
 
 Categorizes the input data using the specified LLM provider.
 
 #### Arguments
 
--   `input_data (str)`: The text data to be categorized.
+-   `input_data` (str): The text data to be categorized.
 
 #### Returns
 
@@ -36,43 +44,44 @@ Categorizes the input data using the specified LLM provider.
 
 #### Raises
 
--   `ValueError`: If the predicted category is not among the provided
+-   `ValueError`: If the predicted category is not one of the provided
     categories.
 
-### categorize_batch
+### `categorize_batch`
 
-Categorizes all of the input data using the specified LLM provider. Do not give
-too large a list as input. Instead, use `apply_to_column_batch` to handle large
-datasets.
+Categorizes a batch of input data using the specified LLM provider. For less
+advanced LLMs, call this method on batches of 3-5 inputs (depending on the
+length of the input data).
 
 #### Arguments
 
--   `input_data List[str]`: List of text data to be categorized
+-   `input_data` (List[str]): A list of text data to be categorized.
 
 #### Returns
 
--   `List[str]`: The predicted categories for the input data.
+-   `List[str]`: A list of predicted categories for the input data.
 
 #### Raises
 
--   `ValueError`: If the predicted category is not among the provided
-    categories.
+-   `ValueError`: If the predicted categories are not a subset of the provided
+    categories or if the number of predicted categories does not match the
+    number of input data.
 
 ## Usage
 
-Setup the LLM provider and categories (as a dictionary)
+Setup the LLM provider and categories (as a dictionary):
 
 ```python
-from databonsai.categorize import MultiCategorizer, BaseCategorizer
+from databonsai.categorize import BaseCategorizer
 from databonsai.llm_providers import OpenAIProvider, AnthropicProvider
 
 provider = OpenAIProvider()  # Or AnthropicProvider()
 categories = {
-    "Weather": "Insights and remarks about weather conditions.",
-    "Sports": "Observations and comments on sports events.",
-    "Celebrities": "Celebrity sightings and gossip",
-    "Others": "Comments do not fit into any of the above categories",
-    "Anomaly": "Data that does not look like comments or natural language",
+   "Weather": "Insights and remarks about weather conditions.",
+   "Sports": "Observations and comments on sports events.",
+   "Celebrities": "Celebrity sightings and gossip",
+   "Others": "Comments do not fit into any of the above categories",
+   "Anomaly": "Data that does not look like comments or natural language",
 }
 ```
 
@@ -106,7 +115,7 @@ print(categories)
 Output:
 
 ```python
-Weather
+['Weather', 'Sports', 'Celebrities']
 ```
 
 Categorize a list of inputs (Use shorter lists for weaker LLMs):

@@ -4,6 +4,7 @@ import os
 from functools import wraps
 from tenacity import retry, wait_exponential, stop_after_attempt
 from dotenv import load_dotenv
+from typing import List
 
 load_dotenv()
 
@@ -89,7 +90,10 @@ class AnthropicProvider(LLMProvider):
         Returns:
         str: The generated text completion.
         """
-
+        if not system_prompt:
+            raise ValueError("System prompt is required.")
+        if not user_prompt:
+            raise ValueError("User prompt is required.")
         response = self.client.messages.create(
             model=self.model,
             max_tokens=max_tokens,
@@ -102,6 +106,49 @@ class AnthropicProvider(LLMProvider):
                         {
                             "type": "text",
                             "text": user_prompt,
+                        }
+                    ],
+                }
+            ],
+        )
+        self.input_tokens += response.usage.input_tokens
+        self.output_tokens += response.usage.output_tokens
+        return response.content[0].text
+
+    # @retry_with_exponential_backoff
+    def generate_batch(
+        self, system_prompt: str, user_prompts: List[str], max_tokens=1000, json=False
+    ) -> str:
+        """
+        Generates a text completion using OpenAI's API, with a given system and user prompt.
+        This method is decorated with retry logic to handle temporary failures.
+
+        Parameters:
+        system_prompt (str): The system prompt to provide context or instructions for the generation.
+        user_prompt (str): The user's prompt, based on which the text completion is generated.
+
+        Returns:
+        str: The generated text completion.
+        """
+        if not system_prompt:
+            raise ValueError("System prompt is required.")
+        if len(user_prompts) == 0:
+            raise ValueError("User prompt is required.")
+        input_data_prompt = ", ".join(
+            [f"Content {idx+1}: {prompt}" for idx, prompt in enumerate(user_prompts)]
+        )
+        response = self.client.messages.create(
+            model=self.model,
+            max_tokens=max_tokens,
+            temperature=self.temperature,
+            system=f"{system_prompt}",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": input_data_prompt,
                         }
                     ],
                 }

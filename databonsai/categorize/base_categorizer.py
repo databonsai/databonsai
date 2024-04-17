@@ -1,5 +1,5 @@
-from typing import Dict, List
-from pydantic import BaseModel, field_validator
+from typing import Dict, List, Optional
+from pydantic import BaseModel, field_validator, model_validator, computed_field
 from databonsai.llm_providers import OpenAIProvider, LLMProvider
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
@@ -17,6 +17,7 @@ class BaseCategorizer(BaseModel):
 
     categories: Dict[str, str]
     llm_provider: LLMProvider
+    examples: Optional[List[Dict[str, str]]] = []
 
     class Config:
         arbitrary_types_allowed = True
@@ -43,6 +44,90 @@ class BaseCategorizer(BaseModel):
             )
         return v
 
+    @field_validator("examples")
+    def validate_examples(cls, v):
+        """
+        Validates the examples list.
+
+        Args:
+            v (List[Dict[str, str]]): The examples list to be validated.
+
+        Raises:
+            ValueError: If the examples list is not a list of dictionaries or if any dictionary is missing the "example" or "response" key.
+
+        Returns:
+            List[Dict[str, str]]: The validated examples list.
+        """
+        if not isinstance(v, list):
+            raise ValueError("Examples must be a list of dictionaries.")
+        for example in v:
+            if not isinstance(example, dict):
+                raise ValueError("Each example must be a dictionary.")
+            if "example" not in example or "response" not in example:
+                raise ValueError(
+                    "Each example dictionary must have 'example' and 'response' keys."
+                )
+        return v
+
+    @model_validator(mode='after')
+    def validate_examples_responses(self):
+        """
+        Validates that the "response" values in the examples are within the categories keys.
+        """
+
+        if self.examples:
+            category_keys = set(self.categories.keys())
+            for example in self.examples:
+                response = example.get("response")
+                if response not in category_keys:
+                    raise ValueError(
+                        f"Example response '{response}' is not one of the provided categories, {str(list(self.categories.keys()))}."
+                    )
+
+        return self
+
+    @computed_field
+    @property
+    def system_message(self) -> str:
+        system_message = f"""
+        Each category is formatted as <category>: <description of data that fits the category>
+        {str(self.categories)}
+        Classify the given text snippet into one of the following categories:
+        {str(list(self.categories.keys()))}
+        Only reply with the category. Do not make any other conversation.
+        """
+
+        # Add in fewshot examples
+        if self.examples:
+            for example in self.examples:
+                system_message += (
+                    f"\nEXAMPLE: {example['example']}  RESPONSE: {example['response']}"
+                )
+        return system_message
+    
+    @computed_field
+    @property
+    def system_message_batch(self) -> str:
+        system_message = f"""
+        Each category is formatted as <category>: <description of data that fits the category>
+        {str(self.categories)}
+        Classify each given text snippet into one of the following categories:
+        {str(list(self.categories.keys()))}. If there are multiple snippets, separate each category with ||. 
+        EXAMPLE: <Text about category 1>  RESPONSE: <Category 1> 
+        EXAMPLE: Content 1: <Text about category 1>, Content 2: <Text about category 2> RESPONSE: <Category 1> || <Category 2>
+        Choose one category for each text snippet.
+        Only reply with the categories. Do not make any other conversation.
+        """
+
+        # Add in fewshot examples
+        if self.examples:
+            system_message += "\n EXAMPLE:"
+            for idx, example in enumerate(self.examples):
+                system_message += (
+                    f"Content {idx+1}: {example['example']}, ")
+            system_message += f"\n RESPONSE: {",".join([example['response'] for example in self.examples])}"
+
+        return system_message
     def categorize(self, input_data: str) -> str:
         """
         Categorizes the input data using the specified LLM provider.
@@ -56,16 +141,8 @@ class BaseCategorizer(BaseModel):
         Raises:
             ValueError: If the predicted category is not one of the provided categories.
         """
-        system_message = f"""
-        Each category is formatted as <category>: <description of data that fits the category>
-        {str(self.categories)}
-        Classify the given text snippet into one of the following categories:
-        {str(list(self.categories.keys()))}
-        Only reply with the category. Do not make any other conversation.
-        """
-
         # Call the LLM provider to get the predicted category
-        response = self.llm_provider.generate(system_message, input_data)
+        response = self.llm_provider.generate(self.system_message, input_data)
         predicted_category = response.strip()
 
         # Validate that the predicted category is one of the provided categories
@@ -89,26 +166,18 @@ class BaseCategorizer(BaseModel):
         Raises:
             ValueError: If the predicted categories are not a subset of the provided categories.
         """
-        system_message = f"""
-        Each category is formatted as <category>: <description of data that fits the category>
-        {str(self.categories)}
-        Classify each given text snippet into one of the following categories:
-        {str(list(self.categories.keys()))}. If there are multiple snippets, separate each category with ||. 
-        EXAMPLE: <Text about category 1>  RESPONSE: <Category 1> 
-        EXAMPLE: <Text about category 1>, <Text about category 2> RESPONSE: <Category 1> || <Category 2>
-        Choose one category for each text snippet. think carefully.
-        Only reply with the categories. Do not make any other conversation.
-        """
+        
         # Call the LLM provider to get the predicted category
-        response = self.llm_provider.generate_batch(system_message, input_data)
+        response = self.llm_provider.generate_batch(self.system_message_batch, input_data)
         predicted_categories = [category.strip() for category in response.split("||")]
+        print(predicted_categories)
         if len(predicted_categories) != len(input_data):
             raise ValueError(
                 f"Number of predicted categories ({len(predicted_categories)}) does not match the number of input data ({len(input_data)})."
             )
         return self.validate_predicted_categories(predicted_categories)
 
-    def validate_predicted_categories(self, predicted_categories: str):
+    def validate_predicted_categories(self, predicted_categories: List[str]):
         for predicted_category in predicted_categories:
             if predicted_category not in self.categories:
                 raise ValueError(

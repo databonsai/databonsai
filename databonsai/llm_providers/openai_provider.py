@@ -22,7 +22,7 @@ class OpenAIProvider(LLMProvider):
         min_wait: int = 1,
         max_wait: int = 60,
         max_tries: int = 10,
-        model: str = "gpt-3.5-turbo",
+        model: str = "gpt-4-turbo",
         temperature: float = 0,
     ):
         """
@@ -94,6 +94,10 @@ class OpenAIProvider(LLMProvider):
         Returns:
         str: The generated text completion.
         """
+        if not system_prompt:
+            raise ValueError("System prompt is required.")
+        if not user_prompt:
+            raise ValueError("User prompt is required.")
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[
@@ -109,9 +113,10 @@ class OpenAIProvider(LLMProvider):
         )
         self.input_tokens += response.usage.prompt_tokens
         self.output_tokens += response.usage.completion_tokens
+        print(response.choices[0].message.content)
         return response.choices[0].message.content
 
-    @retry_with_exponential_backoff
+    # @retry_with_exponential_backoff
     def generate_batch(
         self, system_prompt: str, user_prompts: List[str], max_tokens=1000, json=False
     ) -> str:
@@ -126,9 +131,16 @@ class OpenAIProvider(LLMProvider):
         Returns:
         str: The generated text completion.
         """
-        messages = [{"role": "system", "content": system_prompt}] + [
-            {"role": "user", "content": f"Content {idx+1}: " + prompt}
-            for idx, prompt in enumerate(user_prompts)
+        if not system_prompt:
+            raise ValueError("System prompt is required.")
+        if len(user_prompts) == 0:
+            raise ValueError("User prompt is required.")
+        input_data_prompt = ", ".join(
+            [f"Content {idx+1}: {prompt}" for idx, prompt in enumerate(user_prompts)]
+        )
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": input_data_prompt},
         ]
         # print(messages)
         response = self.client.chat.completions.create(
@@ -143,4 +155,5 @@ class OpenAIProvider(LLMProvider):
         )
         self.input_tokens += response.usage.prompt_tokens
         self.output_tokens += response.usage.completion_tokens
+        print(response.choices[0].message.content)
         return response.choices[0].message.content

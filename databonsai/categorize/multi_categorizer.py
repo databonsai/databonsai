@@ -1,5 +1,6 @@
 from typing import List
 from databonsai.categorize.base_categorizer import BaseCategorizer
+from pydantic import model_validator, computed_field
 
 
 class MultiCategorizer(BaseCategorizer):
@@ -13,7 +14,65 @@ class MultiCategorizer(BaseCategorizer):
     class Config:
         arbitrary_types_allowed = True
 
-    def categorize(self, input_data: str) -> List[str]:
+    @model_validator(mode="after")
+    def validate_examples_responses(self):
+        """
+        Validates that the "response" values in the examples are within the categories keys. If there are multiple categories, they should be separated by commas.
+        """
+
+        if self.examples:
+            category_keys = set(self.categories.keys())
+            for example in self.examples:
+                response = example.get("response")
+                response_categories = response.split(",")
+                for response_category in response_categories:
+                    if response_category not in category_keys:
+                        raise ValueError(
+                            f"Example response '{response}' is not one of the provided categories, {str(list(self.categories.keys()))}."
+                        )
+
+        return self
+
+    @computed_field
+    @property
+    def system_message(self) -> str:
+        system_message = f"""
+        Each category is formatted as <category>: <description of data that fits the category>
+        {str(self.categories)}
+        Classify the given text snippet into one or more of the following categories:
+        {str(list(self.categories.keys()))}
+        Reply with a list of categories separated by || for each text snippet. Do not make any other conversation.
+        """
+
+        # Add in fewshot examples
+        if self.examples:
+            for example in self.examples:
+                system_message += f"\nEXAMPLE: {example['example']}  RESPONSE: {example['response'].replace(',', '||')}"
+        return system_message
+
+    @computed_field
+    @property
+    def system_message_batch(self) -> str:
+        categories = self.categories
+        system_message = f"""
+        Each category is formatted as <category>: <description of data that fits the category>
+        {str(categories)}
+        Classify the given text snippet into one or more of the following categories:
+        {str(list(categories.keys()))}
+        Reply with a list of || separated categories for each content snippet. Separate them with ##. Example: Content 1: <content>, Content 2: <content> \n Response: <category>||<category>##<category>. Do not make any other conversation. Do not mention Content in your response.
+        """
+
+        # Add in fewshot examples
+        if self.examples:
+            system_message += "\nExample: "
+            for idx, example in enumerate(self.examples):
+                system_message += f"Content {str(idx+1)}: {example['example']}, "
+            system_message += f"\nResponse: "
+            for example in self.examples:
+                system_message += f"{example['response'].replace(',', '||')}##"
+        return system_message
+
+    def categorize(self, input_data: str) -> str:
         """
         Categorizes the input data into multiple categories using the specified LLM provider.
 
@@ -21,31 +80,17 @@ class MultiCategorizer(BaseCategorizer):
             input_data (str): The text data to be categorized.
 
         Returns:
-            List[str]: A list of predicted categories for the input data.
+            str: A string of categories for the input data, separated by commas.
 
         Raises:
             ValueError: If the predicted categories are not a subset of the provided categories.
         """
-        categories = self.categories
-        system_message = f"""
-        Each category is formatted as <category>: <description of data that fits the category>
-        {str(categories)}
-        Classify the given text snippet into one or more of the following categories:
-        {str(list(categories.keys()))}
-        Reply with a list of categories separated by || for each text snippet. Do not make any other conversation.
-        """
 
         # Call the LLM provider to get the predicted categories
-        response = self.llm_provider.generate(system_message, input_data)
+        response = self.llm_provider.generate(self.system_message, input_data)
         predicted_categories = [category.strip() for category in response.split("||")]
 
-        # Validate that the predicted categories are a subset of the provided categories
-        if not set(predicted_categories).issubset(categories.keys()):
-            raise ValueError(
-                f"Predicted categories {predicted_categories} are not a subset of the provided categories."
-            )
-
-        return predicted_categories
+        return ",".join(self.validate_predicted_categories(predicted_categories))
 
     def categorize_batch(self, input_data: List[str]) -> List[str]:
         """
@@ -55,24 +100,17 @@ class MultiCategorizer(BaseCategorizer):
             input_data (str): The text data to be categorized.
 
         Returns:
-            List[str]: A list of predicted categories for the input data.
+            List[str]: A list of predicted categories for the input data. If there are multiple categories, they will be separated by commas.
 
         Raises:
             ValueError: If the predicted categories are not a subset of the provided categories.
         """
-        categories = self.categories
-        system_message = f"""
-        Each category is formatted as <category>: <description of data that fits the category>
-        {str(categories)}
-        Classify the given text snippet into one or more of the following categories:
-        {str(list(categories.keys()))}
-        Reply with a list of || separated categories for each snippet. Separate snippets with ##. Example: <snippet 1 category>||<snippet 1 category>##<snippet 2 category>. Do not make any other conversation.
-        """
 
         # Call the LLM provider to get the predicted categories
-
-        response = self.llm_provider.generate_batch(system_message, input_data)
-
+        response = self.llm_provider.generate_batch(
+            self.system_message_batch, input_data
+        )
+        print(response)
         # Split the response into category sets for each input data
         category_sets = response.split("##")
 
