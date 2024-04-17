@@ -110,7 +110,7 @@ class MultiCategorizer(BaseCategorizer):
         response = self.llm_provider.generate_batch(
             self.system_message_batch, input_data
         )
-        print(response)
+
         # Split the response into category sets for each input data
         category_sets = response.split("##")
 

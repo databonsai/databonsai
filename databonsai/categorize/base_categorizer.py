@@ -170,7 +170,6 @@ class BaseCategorizer(BaseModel):
         # Call the LLM provider to get the predicted category
         response = self.llm_provider.generate_batch(self.system_message_batch, input_data)
         predicted_categories = [category.strip() for category in response.split("||")]
-        print(predicted_categories)
         if len(predicted_categories) != len(input_data):
             raise ValueError(
                 f"Number of predicted categories ({len(predicted_categories)}) does not match the number of input data ({len(input_data)})."
