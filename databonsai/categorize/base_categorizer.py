@@ -178,10 +178,18 @@ class BaseCategorizer(BaseModel):
             )
         return self.validate_predicted_categories(predicted_categories)
 
-    def validate_predicted_categories(self, predicted_categories: List[str]):
-        for predicted_category in predicted_categories:
+    def validate_predicted_categories(
+        self, predicted_categories: List[str]
+    ) -> List[str]:
+        # Filter out empty strings from the predicted categories
+        filtered_categories = [
+            category for category in predicted_categories if category
+        ]
+
+        # Validate each category in the filtered list
+        for predicted_category in filtered_categories:
             if predicted_category not in self.categories:
                 raise ValueError(
                     f"Predicted category '{predicted_category}' is not one of the provided categories."
                 )
-        return predicted_categories
+        return filtered_categories
