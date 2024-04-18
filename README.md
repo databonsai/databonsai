@@ -55,7 +55,7 @@ few_shot_examples = [
         {"example": "Big stormy skies over city", "response": "Weather"},
         {"example": "The team won the championship", "response": "Sports"},
         {"example": "I saw a famous rapper at the mall", "response": "Celebrities"},
-    ],
+    ]
 ```
 
 Categorize your data:

@@ -69,7 +69,7 @@ class BaseCategorizer(BaseModel):
                 )
         return v
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_examples_responses(self):
         """
         Validates that the "response" values in the examples are within the categories keys.
@@ -104,7 +104,7 @@ class BaseCategorizer(BaseModel):
                     f"\nEXAMPLE: {example['example']}  RESPONSE: {example['response']}"
                 )
         return system_message
-    
+
     @computed_field
     @property
     def system_message_batch(self) -> str:
@@ -123,11 +123,11 @@ class BaseCategorizer(BaseModel):
         if self.examples:
             system_message += "\n EXAMPLE:"
             for idx, example in enumerate(self.examples):
-                system_message += (
-                    f"Content {idx+1}: {example['example']}, ")
-            system_message += f"\n RESPONSE: {",".join([example['response'] for example in self.examples])}"
+                system_message += f"Content {idx+1}: {example['example']}, "
+            system_message += f"\n RESPONSE: {','.join([example['response'] for example in self.examples])}"
 
         return system_message
+
     def categorize(self, input_data: str) -> str:
         """
         Categorizes the input data using the specified LLM provider.
@@ -166,9 +166,11 @@ class BaseCategorizer(BaseModel):
         Raises:
             ValueError: If the predicted categories are not a subset of the provided categories.
         """
-        
+
         # Call the LLM provider to get the predicted category
-        response = self.llm_provider.generate_batch(self.system_message_batch, input_data)
+        response = self.llm_provider.generate_batch(
+            self.system_message_batch, input_data
+        )
         predicted_categories = [category.strip() for category in response.split("||")]
         if len(predicted_categories) != len(input_data):
             raise ValueError(
