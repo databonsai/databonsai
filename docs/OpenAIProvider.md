@@ -19,8 +19,10 @@ parameters.
 -   `max_wait (int)`: The maximum wait time between retries (default: 60).
 -   `max_tries (int)`: The maximum number of attempts before giving up (default:
     10).
--   `model (str)`: The OpenAI model to use for text generation (default:
-    "gpt-3.5-turbo").
+-   `model (str)`: The default model to use for text generation (default:
+    "gpt-4-turbo").
+-   `temperature (float)`: The temperature parameter for text generation
+    (default: 0).
 
 ## Methods
 
@@ -38,7 +40,28 @@ temporary failures.
     is generated.
 -   `max_tokens (int)`: The maximum number of tokens to generate in the response
     (default: 1000).
--   `json (bool)`: Whether to return the response in JSON format (default:
+-   `json (bool)`: Whether to use OpenAI's JSON response format (default:
+    False).
+
+#### Returns
+
+-   `str`: The generated text completion.
+
+### `generate_batch`
+
+The `generate_batch` method generates a text completion using OpenAI's API, with
+a given system prompt and a list of user prompts. It is decorated with retry
+logic to handle temporary failures.
+
+#### Parameters
+
+-   `system_prompt (str)`: The system prompt to provide context or instructions
+    for the generation.
+-   `user_prompts (List[str])`: The list of user prompts, based on which the
+    text completion is generated.
+-   `max_tokens (int)`: The maximum number of tokens to generate in the response
+    (default: 1000).
+-   `json (bool)`: Whether to use OpenAI's JSON response format (default:
     False).
 
 #### Returns
@@ -53,12 +76,13 @@ access instance attributes for retry configuration.
 
 ## Usage
 
-If your OPENAI_API_KEY is defined in .env
+If your OPENAI_API_KEY is defined in .env:
 
 ```python
 from databonsai.llm_providers import OpenAIProvider
 
 provider = OpenAIProvider()
+
 ```
 
 Or, provide the api key as an argument:

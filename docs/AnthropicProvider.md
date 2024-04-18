@@ -1,8 +1,8 @@
 # AnthropicProvider
 
 The `AnthropicProvider` class is a provider class that interacts with
-Anthropic's API for generating text completions. It supports exponential backoff
-retries (from tenacity's library) to handle temporary failures, which is
+Anthropic's Claude API for generating text completions. It supports exponential
+backoff retries (from tenacity's library) to handle temporary failures, which is
 particularly useful when dealing with large datasets.
 
 ## Initialization
@@ -19,16 +19,18 @@ retry parameters.
 -   `max_wait (int)`: The maximum wait time between retries (default: 60).
 -   `max_tries (int)`: The maximum number of attempts before giving up (default:
     10).
--   `model (str)`: The Anthropic model to use for text generation (default:
+-   `model (str)`: The default model to use for text generation (default:
     "claude-3-haiku-20240307").
+-   `temperature (float)`: The temperature parameter for text generation
+    (default: 0).
 
 ## Methods
 
 ### `generate`
 
-The `generate` method generates a text completion using Anthropic's API, given a
-system prompt and a user prompt. It is decorated with retry logic to handle
-temporary failures.
+The `generate` method generates a text completion using Anthropic's Claude API,
+given a system prompt and a user prompt. It is decorated with retry logic to
+handle temporary failures.
 
 #### Parameters
 
@@ -36,6 +38,24 @@ temporary failures.
     for the generation.
 -   `user_prompt (str)`: The user's prompt, based on which the text completion
     is generated.
+-   `max_tokens (int)`: The maximum number of tokens to generate in the response
+    (default: 1000).
+
+#### Returns
+
+-   `str`: The generated text completion.
+
+### `generate_batch`
+
+The `generate_batch` method generates a text completion using Anthropic's Claude
+API, with a given system prompt and a list of user prompts.
+
+#### Parameters
+
+-   `system_prompt (str)`: The system prompt to provide context or instructions
+    for the generation.
+-   `user_prompts (List[str])`: The list of user prompts, based on which the
+    text completion is generated.
 -   `max_tokens (int)`: The maximum number of tokens to generate in the response
     (default: 1000).
 
@@ -51,7 +71,7 @@ access instance attributes for retry configuration.
 
 ## Usage
 
-If your Anthropic_API_KEY is defined in .env
+If your ANTHROPIC_API_KEY is defined in .env:
 
 ```python
 from databonsai.llm_providers import AnthropicProvider

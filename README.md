@@ -180,7 +180,8 @@ print(categorizer.system_message_batch)
 
 ### View token usage
 
-Token usage is recorded for each provider. Use these to estimate your costs!
+Token usage is recorded for OpenAI and Anthropic. Use these to estimate your
+costs!
 
 ```python
 print(provder.input_tokens)
@@ -198,14 +199,16 @@ print(provder.output_tokens)
 -   [BaseTransformer](./docs/BaseTransformer.md) - transform data with a prompt
 -   [DecomposeTransformer](./docs/DecomposeTransformer.md) - decompose data into
     a structured format based on a schema
+-   .. more coming soon!
 
 ### LLM Providers
 
 -   [OpenAIProvider](./docs/OpenAIProvider.md) - OpenAI
 -   [AnthropicProvider](./docs/AnthropicProvider.md) - Anthropic
--   CustomProvider (TBD)
+-   [OllamaProvider](./docs/OllamaProvider.md) - Ollama
+-   .. more coming soon!
 
-### Examples (TBD)
+### Examples
 
 -   [Examples](./databonsai/examples/) (TBD)
 
