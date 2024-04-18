@@ -40,7 +40,8 @@ given system prompt and a user prompt.
 ### `generate_batch`
 
 The `generate_batch` method generates a text completion using Ollama's API, with
-a given system prompt and a list of user prompts.
+a given system prompt and a list of user prompts. Note that generate_batch does
+not work well with smaller models.
 
 #### Parameters
 
