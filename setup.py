@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="databonsai",
-    version="0.4.0",
+    version="0.4.1",
     description="A package for cleaning and curating data with LLMs",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
@@ -17,6 +17,7 @@ setup(
         "python-dotenv",
         "pydantic",
         "anthropic",
+        "ollama",
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",

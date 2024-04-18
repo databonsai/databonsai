@@ -7,11 +7,6 @@ class LLMProvider(ABC):
     @abstractmethod
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        multiplier: int = 1,
-        min_wait: int = 1,
-        max_wait: int = 60,
-        max_tries: int = 10,
         model: str = "",
         temperature: float = 0,
     ):
@@ -19,11 +14,7 @@ class LLMProvider(ABC):
         Initializes the LLMProvider with an API key and retry parameters.
 
         Parameters:
-        api_key (Optional[str]): API key for the provider.
-        multiplier (int): The multiplier for the exponential backoff in retries.
-        min_wait (int): The minimum wait time between retries.
-        max_wait (int): The maximum wait time between retries.
-        max_tries (int): The maximum number of attempts before giving up.
+
         model (str): The default model to use for text generation.
         temperature (float): The temperature parameter for text generation.
         """
@@ -42,13 +33,5 @@ class LLMProvider(ABC):
 
         Returns:
         str: The generated text completion.
-        """
-        pass
-
-    @abstractmethod
-    def retry_with_exponential_backoff(self, method):
-        """
-        Decorator to apply retry logic with exponential backoff to an instance method.
-        It captures the 'self' context to access instance attributes for retry configuration.
         """
         pass

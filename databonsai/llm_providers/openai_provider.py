@@ -34,6 +34,7 @@ class OpenAIProvider(LLMProvider):
         min_wait (int): The minimum wait time between retries.
         max_wait (int): The maximum wait time between retries.
         max_tries (int): The maximum number of attempts before giving up.
+        model (str): The default model to use for text generation.
         temperature (float): The temperature parameter for text generation.
         """
         super().__init__()
@@ -90,6 +91,8 @@ class OpenAIProvider(LLMProvider):
         Parameters:
         system_prompt (str): The system prompt to provide context or instructions for the generation.
         user_prompt (str): The user's prompt, based on which the text completion is generated.
+        max_tokens (int): The maximum number of tokens to generate in the response.
+        json (bool): Whether to use OpenAI's JSON response format.
 
         Returns:
         str: The generated text completion.
@@ -106,7 +109,6 @@ class OpenAIProvider(LLMProvider):
             ],
             temperature=self.temperature,
             max_tokens=max_tokens,
-            top_p=0.1,
             frequency_penalty=0,
             presence_penalty=0,
             response_format={"type": "json_object"} if json else {"type": "text"},
@@ -115,7 +117,7 @@ class OpenAIProvider(LLMProvider):
         self.output_tokens += response.usage.completion_tokens
         return response.choices[0].message.content
 
-    # @retry_with_exponential_backoff
+    @retry_with_exponential_backoff
     def generate_batch(
         self, system_prompt: str, user_prompts: List[str], max_tokens=1000, json=False
     ) -> str:
@@ -126,6 +128,8 @@ class OpenAIProvider(LLMProvider):
         Parameters:
         system_prompt (str): The system prompt to provide context or instructions for the generation.
         user_prompt (str): The user's prompt, based on which the text completion is generated.
+        max_tokens (int): The maximum number of tokens to generate in the response.
+        json (bool): Whether to use OpenAI's JSON response format.
 
         Returns:
         str: The generated text completion.
@@ -146,7 +150,6 @@ class OpenAIProvider(LLMProvider):
             messages=messages,
             temperature=self.temperature,
             max_tokens=max_tokens,
-            top_p=0.1,
             frequency_penalty=0,
             presence_penalty=0,
             response_format={"type": "json_object"} if json else {"type": "text"},
