@@ -1,8 +1,16 @@
+import logging
 from typing import Dict, List, Optional
-from pydantic import BaseModel, field_validator, model_validator, computed_field
-from databonsai.llm_providers import OpenAIProvider, LLMProvider
-from pydantic import ConfigDict
+
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    computed_field,
+    field_validator,
+    model_validator,
+)
 from pydantic.dataclasses import dataclass
+
+from databonsai.llm_providers import LLMProvider, OpenAIProvider
 
 
 class BaseCategorizer(BaseModel):
@@ -112,8 +120,8 @@ class BaseCategorizer(BaseModel):
         Each category is formatted as <category>: <description of data that fits the category>
         {str(self.categories)}
         Classify each given text snippet into one of the following categories:
-        {str(list(self.categories.keys()))}. If there are multiple snippets, separate each category with ||. 
-        EXAMPLE: <Text about category 1>  RESPONSE: <Category 1> 
+        {str(list(self.categories.keys()))}. If there are multiple snippets, separate each category with ||.
+        EXAMPLE: <Text about category 1>  RESPONSE: <Category 1>
         EXAMPLE: Content 1: <Text about category 1>, Content 2: <Text about category 2> RESPONSE: <Category 1> || <Category 2>
         Choose one category for each text snippet.
         Only reply with the categories. Do not make any other conversation.
@@ -187,9 +195,13 @@ class BaseCategorizer(BaseModel):
         ]
 
         # Validate each category in the filtered list
+        valid_categories = []
         for predicted_category in filtered_categories:
             if predicted_category not in self.categories:
-                raise ValueError(
-                    f"Predicted category '{predicted_category}' is not one of the provided categories."
+                logging.warning(
+                    f"Predicted category '{predicted_category}' "
+                    f"is not one of the provided categories."
                 )
-        return filtered_categories
+            else:
+                valid_categories.append(predicted_category)
+        return valid_categories
