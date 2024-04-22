@@ -3,13 +3,13 @@ from pydantic import field_validator, model_validator, computed_field
 from databonsai.transform.base_transformer import BaseTransformer
 
 
-class DecomposeTransformer(BaseTransformer):
+class ExtractTransformer(BaseTransformer):
     """
-    This class extends the BaseTransformer class and overrides the transform method to decompose the input data into a list of dictionaries based on a provided output schema.
+    This class extends the BaseTransformer class and overrides the transform method to extract  a given schema from the input data into a list of dictionaries.
 
     Attributes:
         output_schema (Dict[str, str]): A dictionary representing the schema of the output dictionaries.
-        examples (Optional[List[Dict[str, str]]]): A list of example inputs and their corresponding decomposed outputs.
+        examples (Optional[List[Dict[str, str]]]): A list of example inputs and their corresponding extracted outputs.
 
     Raises:
         ValueError: If the output schema dictionary is empty, or if the transformed data does not match the expected format or schema.

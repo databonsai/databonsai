@@ -94,6 +94,7 @@ class BaseCategorizer(BaseModel):
         {str(self.categories)}
         Classify the given text snippet into one of the following categories:
         {str(list(self.categories.keys()))}
+        Do not use any other categories.
         Only reply with the category. Do not make any other conversation.
         """
 
@@ -112,7 +113,8 @@ class BaseCategorizer(BaseModel):
         Each category is formatted as <category>: <description of data that fits the category>
         {str(self.categories)}
         Classify each given text snippet into one of the following categories:
-        {str(list(self.categories.keys()))}. If there are multiple snippets, separate each category with ||. 
+        {str(list(self.categories.keys()))}.
+         Do not use any other categories. If there are multiple snippets, separate each category with ||. 
         EXAMPLE: <Text about category 1>  RESPONSE: <Category 1> 
         EXAMPLE: Content 1: <Text about category 1>, Content 2: <Text about category 2> RESPONSE: <Category 1> || <Category 2>
         Choose one category for each text snippet.
@@ -124,7 +126,7 @@ class BaseCategorizer(BaseModel):
             system_message += "\n EXAMPLE:"
             for idx, example in enumerate(self.examples):
                 system_message += f"Content {idx+1}: {example['example']}, "
-            system_message += f"\n RESPONSE: {','.join([example['response'] for example in self.examples])}"
+            system_message += f"\n RESPONSE: {'||'.join([example['response'] for example in self.examples])}"
 
         return system_message
 
@@ -166,7 +168,9 @@ class BaseCategorizer(BaseModel):
         Raises:
             ValueError: If the predicted categories are not a subset of the provided categories.
         """
-
+        # If there is only one input, call the categorize method
+        if len(input_data) == 1:
+            return self.validate_predicted_categories([self.categorize(input_data[0])])
         # Call the LLM provider to get the predicted category
         response = self.llm_provider.generate_batch(
             self.system_message_batch, input_data

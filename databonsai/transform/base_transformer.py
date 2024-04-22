@@ -131,6 +131,8 @@ class BaseTransformer(BaseModel):
         Returns:
             List[str]: A list of transformed data, where each element corresponds to the transformed version of the respective input data.
         """
+        if len(input_data) == 1:
+            return [self.transform(input_data[0])]
         # Call the LLM provider to perform the batch transformation
         response = self.llm_provider.generate_batch(
             self.system_message_batch, input_data, max_tokens=max_tokens

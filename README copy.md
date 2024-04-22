@@ -96,34 +96,40 @@ Output:
 ['Weather', 'Sports', 'Celebrities']
 ```
 
-### AutoBatch for Larger datasets
+### Dataframes & Lists
 
-If you have a pandas dataframe or list, use `apply_to_column_autobatch`
+If you have a pandas dataframe or list, use `apply_to_column_batch` for some
+handy features:
 
--   Batching data for LLM api calls saves tokens by not sending the prompt for
-    every row. However, too large a batch size / complex tasks can lead to
-    errors. Naturally, the better the LLM model, the larger the batch size you
-    can use.
-
--   This batching is handled adaptively (i.e., it will increase the batch size
-    if the response is valid and reduce it if it's not, with a decay factor)
-
-Other features:
-
+-   batching saves tokens by not resending the schema each time.
 -   progress bar
--   returns the last successful index so you can resume from there, in case it
-    exceeds max_retries
+-   returns the last successful index so you can resume from there, in case of
+    any error (llm_provider already implements exponential backoff, but just in
+    case)
 -   modifies your output list in place, so you don't lose any progress
 
-Retry Logic:
-
--   LLM providers have retry logic built in for API related errors. This can be
-    configured in the provider.
--   The retry logic in the apply_to_column_autobatch is for handling invalid
-    responses (e.g. unexpected category, different number of outputs, etc.)
+Use the method as such:
 
 ```python
-from databonsai.utils import apply_to_column_batch, apply_to_column, apply_to_column_autobatch
+success_idx = apply_to_column_batch(input_column, output_column, function, batch_size, start_idx)
+```
+
+Parameters:
+
+-   `input_column`: The name of the column from which data will be read.
+-   `output_column`: The name of the column to which data will be written.
+-   `function`: The function to apply to each batch of data.
+-   `batch_size`: The number of rows in each batch.
+-   `start_idx`: The starting index from which to begin processing.
+
+Returns:
+
+-   `success_idx`: The index of the last successful row processed.
+
+(Continued from the previous code example)
+
+```python
+from databonsai.utils import apply_to_column_batch, apply_to_column
 import pandas as pd
 
 headlines = [
@@ -140,18 +146,17 @@ headlines = [
 ]
 df = pd.DataFrame(headlines, columns=["Headline"])
 df["Category"] = None # Initialize it if it doesn't exist, as we modify it in place
-success_idx = apply_to_column_autobatch( df["Headline"], df["Category"], categorizer.categorize_batch, batch_size=3, start_idx=0)
+success_idx = apply_to_column_batch( df["Headline"], df["Category"], categorizer.categorize_batch, batch_size=3, start_idx=0)
 ```
 
-There are many more options available for autobatch, such as setting a
-max_retries, decay factor, and more. Check [Utils](./docs/Utils.md) for more
-details
+By default, exponential backoff is used to handle rate limiting. This is handled
+in the LLM providers and can be configured.
 
 If it fails midway (even after exponential backoff), you can resume from the
 last successful index + 1.
 
 ```python
-success_idx = apply_to_column_autobatch( df["Headline"], df["Category"], categorizer.categorize_batch, batch_size=10, start_idx=success_idx+1)
+success_idx = apply_to_column_batch( df["Headline"], df["Category"], categorizer.categorize_batch, batch_size=10, start_idx=success_idx+1)
 ```
 
 This also works for regular python lists.
@@ -159,12 +164,6 @@ This also works for regular python lists.
 Note that the better the LLM model, the greater the batch_size you can use
 (depending on the length of your inputs). If you're getting errors, reduce the
 batch_size, or use a better LLM model.
-
-To use it with batching, but with a fixed batch size:
-
-```python
-success_idx = apply_to_column_batch( df["Headline"], df["Category"], categorizer.categorize_batch, batch_size=3, start_idx=0)
-```
 
 To use it without batching:
 

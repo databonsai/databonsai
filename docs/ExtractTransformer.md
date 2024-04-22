@@ -1,9 +1,9 @@
-# DecomposeTransformer
+# ExtractTransformer
 
-The `DecomposeTransformer` class extends the `BaseTransformer` class and
-overrides the `transform` method to decompose the input data into a list of
-dictionaries based on a provided output schema. It allows for transforming input
-data into a structured format according to a specified schema.
+The `ExtractTransformer` class extends the `BaseTransformer` class and overrides
+the `transform` method to extract a given schema from the input data into a list
+of dictionaries. It allows for transforming input data into a structured format
+according to a specified schema.
 
 ## Features
 
@@ -20,7 +20,7 @@ data into a structured format according to a specified schema.
     the output dictionaries. It defines the expected keys and their
     corresponding value types in the transformed data.
 -   `examples` (Optional[List[Dict[str, str]]]): A list of example inputs and
-    their corresponding decomposed outputs.
+    their corresponding extracted outputs.
 
 ## Computed Fields
 
@@ -51,18 +51,18 @@ provider.
 
 ## Usage
 
-Prepare a decompose transformer with a prompt and output schema:
+Prepare a Extract transformer with a prompt and output schema:
 
 ```python
 from databonsai.llm_providers import OpenAIProvider
-from databonsai.transform import DecomposeTransformer
+from databonsai.transform import ExtractTransformer
 
 output_schema = {
     "question": "generated question about given information",
     "answer": "answer to the question, only using information from the given data",
 }
 
-qna = DecomposeTransformer(
+qna = ExtractTransformer(
     prompt="Your goal is to create a set of questions and answers to help a person memorise every single detail of a document.",
     output_schema=output_schema,
     llm_provider=OpenAIProvider(),
@@ -86,7 +86,7 @@ qna = DecomposeTransformer(
 )
 ```
 
-Here's the text we want to decompose:
+Here's the text we want to extract questions and answers from:
 
 ```python
 text = """ Sky-gazers across North America are in for a treat on April 8 when a total solar eclipse will pass over Mexico, the United States and Canada.
@@ -125,4 +125,4 @@ Output:
 ]
 ```
 
-Batching is not supported for DecomposeTransformer yet.
+Batching is not supported for ExtractTransformer yet.

@@ -41,6 +41,7 @@ class MultiCategorizer(BaseCategorizer):
         {str(self.categories)}
         Classify the given text snippet into one or more of the following categories:
         {str(list(self.categories.keys()))}
+        Do not use any other categories.
         Reply with a list of categories separated by || for each text snippet. Do not make any other conversation.
         """
 
@@ -59,17 +60,16 @@ class MultiCategorizer(BaseCategorizer):
         {str(categories)}
         Classify the given text snippet into one or more of the following categories:
         {str(list(categories.keys()))}
-        Reply with a list of || separated categories for each content snippet. Separate them with ##. Example: Content 1: <content>, Content 2: <content> \n Response: <category>||<category>##<category>. Do not make any other conversation. Do not mention Content in your response.
+        Do not use any other categories.
+        Reply with a list of || separated categories for each content snippet. Separate them with ##. EXAMPLE: Content 1: <content>, Content 2: <content> \n RESPONSE: <category of content1>||<category of content1>##<category of content2> Do not make any other conversation. Do not mention Content in your response.
         """
 
         # Add in fewshot examples
         if self.examples:
-            system_message += "\nExample: "
+            system_message += "\nEXAMPLE: "
             for idx, example in enumerate(self.examples):
                 system_message += f"Content {str(idx+1)}: {example['example']}, "
-            system_message += f"\nResponse: "
-            for example in self.examples:
-                system_message += f"{example['response'].replace(',', '||')}##"
+            system_message += f"\nRESPONSE: {'##'.join([example['response'].replace(',', '||') for example in self.examples])}"
         return system_message
 
     def categorize(self, input_data: str) -> str:
@@ -105,12 +105,12 @@ class MultiCategorizer(BaseCategorizer):
         Raises:
             ValueError: If the predicted categories are not a subset of the provided categories.
         """
-
+        if len(input_data) == 1:
+            return self.validate_predicted_categories([self.categorize(input_data[0])])
         # Call the LLM provider to get the predicted categories
         response = self.llm_provider.generate_batch(
             self.system_message_batch, input_data
         )
-
         # Split the response into category sets for each input data
         category_sets = response.split("##")
 
