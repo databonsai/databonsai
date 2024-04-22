@@ -110,10 +110,10 @@ If you have a pandas dataframe or list, use `apply_to_column_autobatch`
 
 Other features:
 
--   progress bar
--   returns the last successful index so you can resume from there, in case it
+-   Progress bar
+-   Returns the last successful index so you can resume from there, in case it
     exceeds max_retries
--   modifies your output list in place, so you don't lose any progress
+-   Modifies your output list in place, so you don't lose any progress
 
 Retry Logic:
 
