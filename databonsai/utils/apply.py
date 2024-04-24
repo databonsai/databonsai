@@ -1,6 +1,4 @@
 from tqdm import tqdm
-from databonsai.categorize import BaseCategorizer
-from databonsai.transform import BaseTransformer, ExtractTransformer
 from typing import List, Callable, Union, get_origin
 import inspect
 
@@ -40,16 +38,10 @@ def apply_to_column(
 
     success_idx = start_idx
 
-    if isinstance(func.__self__, BaseCategorizer):
-        desc = "Categorizing"
-    elif isinstance(func.__self__, BaseTransformer):
-        desc = "Transforming"
-    else:
-        desc = "Processing"
-
     try:
         for idx, value in enumerate(
-            tqdm(input_column[start_idx:], desc=desc, unit="row"), start=start_idx
+            tqdm(input_column[start_idx:], desc="Processing data..", unit="row"),
+            start=start_idx,
         ):
             result = func(value)
 
@@ -70,7 +62,7 @@ def apply_to_column(
 def apply_to_column_batch(
     input_column: List,
     output_column: List,
-    batch_func: Callable,
+    func: Callable,
     batch_size: int = 5,
     start_idx: int = 0,
 ) -> int:
@@ -80,7 +72,7 @@ def apply_to_column_batch(
     Parameters:
         input_column (List): The column of the DataFrame or a normal Python list to apply the function to.
         output_column (List): A list to store the processed values. The function will mutate this list in-place.
-        batch_func (callable): The batch function to apply to each batch of values in the column.
+        func (callable): The batch function to apply to each batch of values in the column.
                          The function should take a list of values as input and return a list of processed values.
         batch_size (int, optional): The size of each batch. Default is 5.
         start_idx (int, optional): The index from which to start applying the function. Default is 0.
@@ -100,22 +92,16 @@ def apply_to_column_batch(
 
     if len(output_column) > len(input_column):
         raise ValueError(
-            f"The length of the output_column list ({len(output_column)}) is greater than the length of th input_column ({len(column)})."
+            f"The length of the output_column list ({len(output_column)}) is greater than the length of th input_column ({len(input_column)})."
         )
 
-    check_batch_func(batch_func)
+    check_func(func)
     success_idx = start_idx
-
-    if isinstance(batch_func.__self__, BaseCategorizer):
-        desc = "Categorizing"
-    elif isinstance(batch_func.__self__, BaseTransformer):
-        desc = "Transforming"
-    else:
-        desc = "Processing"
-
     try:
         for i in tqdm(
-            range(start_idx, len(input_column), batch_size), desc=desc, unit="batch"
+            range(start_idx, len(input_column), batch_size),
+            desc="Processing data..",
+            unit="batch",
         ):
             batch_end = min(i + batch_size, len(input_column))
             batch = input_column[i:batch_end]
@@ -136,7 +122,7 @@ def apply_to_column_batch(
 def apply_to_column_autobatch(
     input_column: List,
     output_column: List,
-    batch_func: Callable,
+    func: Callable,
     max_retries: int = 3,
     max_batch_size: int = 5,
     batch_size: int = 2,
@@ -157,8 +143,8 @@ def apply_to_column_autobatch(
     Parameters:
         input_column (List): The input column to be processed.
         output_column (List): The list to store the processed results.
-        instance (Union[BaseCategorizer, BaseTransformer]): An instance of BaseCategorizer or BaseTransformer
-                                                             containing the batch processing function.
+        func (callable): The batch function to apply to each batch of values in the column.
+                         The function should take a list of values as input and return a list of processed values.
         max_retries (int): The maximum number of retries for failed batches.
         max_batch_size (int): The maximum allowed batch size.
         batch_size (int): The initial batch size.
@@ -185,14 +171,7 @@ def apply_to_column_autobatch(
             f"The length of the output_column list ({len(output_column)}) is greater than the length of the input_column ({len(input_column)})."
         )
 
-    if isinstance(batch_func.__self__, BaseCategorizer):
-        desc = "Categorizing"
-    elif isinstance(batch_func.__self__, BaseTransformer):
-        desc = "Transforming"
-    else:
-        desc = "Processing"
-
-    check_batch_func(batch_func)
+    check_func(func)
     success_idx = start_idx
     ramp_factor = ramp_factor
     reduce_factor = reduce_factor
@@ -203,12 +182,14 @@ def apply_to_column_autobatch(
         batch_size = batch_size
         retry_count = 0
 
-        with tqdm(total=len(remaining_data), desc=desc, unit="row") as pbar:
+        with tqdm(
+            total=len(remaining_data), desc="Processing data..", unit="row"
+        ) as pbar:
             while len(remaining_data) > 0:
                 try:
                     batch_size = min(batch_size, len(remaining_data))
                     batch = remaining_data[:batch_size]
-                    batch_results = batch_func(batch)
+                    batch_results = func(batch)
                     processed_results.extend(batch_results)
                     remaining_data = remaining_data[batch_size:]
                     retry_count = 0
@@ -243,12 +224,12 @@ def apply_to_column_autobatch(
     return min(success_idx, len(input_column))
 
 
-def check_batch_func(batch_func):
-    if not inspect.signature(batch_func).parameters:
+def check_func(func):
+    if not inspect.signature(func).parameters:
         raise TypeError("The provided function does not take any arguments.")
 
     # Ensure func is a batch function that takes a list
-    first_param = list(inspect.signature(batch_func).parameters.values())[0]
+    first_param = list(inspect.signature(func).parameters.values())[0]
     param_annotation = first_param.annotation
     origin = get_origin(param_annotation)
 

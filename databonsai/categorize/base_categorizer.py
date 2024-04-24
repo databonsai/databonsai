@@ -1,8 +1,7 @@
 from typing import Dict, List, Optional
 from pydantic import BaseModel, field_validator, model_validator, computed_field
 from databonsai.llm_providers import OpenAIProvider, LLMProvider
-from pydantic import ConfigDict
-from pydantic.dataclasses import dataclass
+from databonsai.utils.logs import logger
 
 
 class BaseCategorizer(BaseModel):
@@ -18,6 +17,7 @@ class BaseCategorizer(BaseModel):
     categories: Dict[str, str]
     llm_provider: LLMProvider
     examples: Optional[List[Dict[str, str]]] = []
+    strict: bool = True
 
     class Config:
         arbitrary_types_allowed = True
@@ -149,9 +149,14 @@ class BaseCategorizer(BaseModel):
 
         # Validate that the predicted category is one of the provided categories
         if predicted_category not in self.categories:
-            raise ValueError(
-                f"Predicted category '{predicted_category}' is not one of the provided categories."
-            )
+            if self.strict:
+                raise ValueError(
+                    f"Predicted category '{predicted_category}' is not one of the provided categories. Use 'strict=False' when instantiating the categorizer to allow categories not in the categories dict."
+                )
+            else:
+                logger.warning(
+                    f"Predicted category '{predicted_category}' is not one of the provided categories. Use 'strict=True' when instantiating the categorizer to raise an error."
+                )
 
         return predicted_category
 
@@ -193,7 +198,13 @@ class BaseCategorizer(BaseModel):
         # Validate each category in the filtered list
         for predicted_category in filtered_categories:
             if predicted_category not in self.categories:
-                raise ValueError(
-                    f"Predicted category '{predicted_category}' is not one of the provided categories."
-                )
+                if self.strict:
+                    raise ValueError(
+                        f"Predicted category '{predicted_category}' is not one of the provided categories. Use 'strict=False' when instantiating the categorizer to allow categories not in the categories dict."
+                    )
+                else:
+                    # Warn the user if the predicted category is not one of the provided categories
+                    logger.warning(
+                        f"Predicted category '{predicted_category}' is not one of the provided categories. Use 'strict=True' when instantiating the categorizer to raise an error."
+                    )
         return filtered_categories
