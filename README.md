@@ -64,8 +64,8 @@ Categorize your data:
 categorizer = BaseCategorizer(
     categories=categories,
     llm_provider=provider,
-    examples = few_shot_examples
-
+    examples = few_shot_examples,
+    #strict = False # Default true, set to False to allow for categories not in the provided dict
 )
 category = categorizer.categorize("It's been raining outside all day")
 print(category)
