@@ -25,6 +25,8 @@ given input.
 -   `examples` (Optional[List[Dict[str, str]]]): A list of example inputs and
     their corresponding categories to improve categorization accuracy. If there
     are multiple categories for an example, they should be separated by commas.
+-   `strict` (bool): If True, raises an error when the predicted category is not
+    one of the provided categories.
 
 ## Computed Fields
 
@@ -103,6 +105,7 @@ tagger = MultiCategorizer(
             "example": "Elon musk likes to play golf",
             "response": "Sports,Celebrities",
         },
+    # strict=False, # Default true, set to False to allow for categories not in the provided
     ],
 )
 categories = tagger.categorize(

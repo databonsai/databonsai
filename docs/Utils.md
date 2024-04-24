@@ -36,8 +36,8 @@ Python list, starting from a specified index.
     to which the function will be applied.
 -   `output_column` (List): A list where the processed values will be stored.
     The function will mutate this list in-place.
--   `batch_func` (Callable): The batch function to apply to each batch of values
-    in the column. It should take a list of values as input and return a list of
+-   `func` (Callable): The batch function to apply to each batch of values in
+    the column. It should take a list of values as input and return a list of
     processed values.
 -   `batch_size` (int, optional): The size of each batch. Default is 5.
 -   `start_idx` (int, optional): The index from which to start applying the
@@ -61,7 +61,7 @@ from a specified index and adjusting batch sizes based on success or failure.
 
 -   `input_column` (List): The input column to be processed.
 -   `output_column` (List): The list where the processed results will be stored.
--   `batch_func` (Callable): The batch function used for processing.
+-   `func` (Callable): The batch function used for processing.
 -   `max_retries` (int): The maximum number of retries for failed batches.
 -   `max_batch_size` (int): The maximum allowed batch size.
 -   `batch_size` (int): The initial batch size.

@@ -21,6 +21,8 @@ categorization tasks where inputs are classified into predefined categories.
     categorization.
 -   `examples` (Optional[List[Dict[str, str]]]): A list of example inputs and
     their corresponding categories to improve categorization accuracy.
+-   `strict` (bool): If True, raises an error when the predicted category is not
+    one of the provided categories.
 
 ## Computed Fields
 
@@ -91,6 +93,7 @@ Categorize your data:
 categorizer = BaseCategorizer(
     categories=categories,
     llm_provider=provider,
+    # strict=False, # Default true, set to False to allow for categories not in the provided
 )
 category = categorizer.categorize("It's been raining outside all day")
 print(category)
