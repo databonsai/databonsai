@@ -36,13 +36,13 @@ ANTHROPIC_API_KEY=xxx # If you use AnthropicProvider
 
 ### Categorization
 
-Setup the LLM provider and categories (as a dictionary)
+Setup the LLM provider and categories (as a dictionary.
 
 ```python
 from databonsai.categorize import MultiCategorizer, BaseCategorizer
 from databonsai.llm_providers import OpenAIProvider, AnthropicProvider
 
-provider = OpenAIProvider()  # Or AnthropicProvider(). Works best with gpt-4-turbo or any claude model
+provider = OpenAIProvider()  # Or AnthropicProvider(). Highly recommend using Haiku, which is the default AnthropicProvider() model, as it is cheap and effective for these tasks
 categories = {
     "Weather": "Insights and remarks about weather conditions.",
     "Sports": "Observations and comments on sports events.",
