@@ -97,21 +97,26 @@ def apply_to_column_batch(
 
     check_func(func)
     success_idx = start_idx
+    num_items = len(input_column)
     try:
-        for i in tqdm(
-            range(start_idx, len(input_column), batch_size),
-            desc="Processing data..",
-            unit="batch",
-        ):
-            batch_end = min(i + batch_size, len(input_column))
-            batch = input_column[i:batch_end]
-            batch_result = func(batch)
-            if i >= len(output_column):
-                output_column.extend(batch_result)
-            else:
-                output_column[i : i + len(batch_result)] = batch_result
-            success_idx = batch_end
+        with tqdm(total=num_items, desc="Processing data..", unit="item") as pbar:
+            for i in range(start_idx, num_items, batch_size):
+                batch_end = min(i + batch_size, num_items)
+                batch = input_column[i:batch_end]
+                batch_result = func(batch)
+
+                # Update output column
+                if i >= len(output_column):
+                    output_column.extend(batch_result)
+                else:
+                    output_column[i : i + len(batch_result)] = batch_result
+
+                # Update progress bar by the number of items processed in this batch
+                pbar.update(len(batch_result))
+
+                success_idx = batch_end
     except Exception as e:
+
         print(f"Error occurred at batch starting at index {success_idx}: {str(e)}")
         print(f"Processing stopped at batch ending at index {success_idx - 1}")
         return success_idx
@@ -178,7 +183,6 @@ def apply_to_column_autobatch(
 
     try:
         remaining_data = input_column[start_idx:]
-        processed_results = []
         batch_size = batch_size
         retry_count = 0
 
@@ -190,9 +194,15 @@ def apply_to_column_autobatch(
                     batch_size = min(batch_size, len(remaining_data))
                     batch = remaining_data[:batch_size]
                     batch_results = func(batch)
-                    processed_results.extend(batch_results)
+
+                    # Update output_column in place
+                    output_column[success_idx : success_idx + batch_size] = (
+                        batch_results
+                    )
+
                     remaining_data = remaining_data[batch_size:]
                     retry_count = 0
+                    success_idx += batch_size
 
                     # Update progress bar
                     pbar.update(batch_size)
@@ -202,20 +212,16 @@ def apply_to_column_autobatch(
                     ramp_factor = max(ramp_factor * ramp_factor_decay, 1.0)
 
                 except Exception as e:
-
                     if retry_count >= max_retries:
                         raise ValueError(
                             f"Processing failed after {max_retries} retries. Error: {str(e)}"
                         )
                     retry_count += 1
-
                     # Decrease the batch size using the decayed reduce factor
                     batch_size = max(round(batch_size * reduce_factor), 1)
                     print(f"Retrying with smaller batch size: {batch_size}")
                     reduce_factor *= reduce_factor_decay
 
-        output_column[start_idx:] = processed_results
-        success_idx = start_idx + len(processed_results)
     except Exception as e:
         print(f"Error occurred at batch starting at index {success_idx}: {str(e)}")
         print(f"Processing stopped at batch ending at index {success_idx - 1}")

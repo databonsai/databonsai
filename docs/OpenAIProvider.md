@@ -47,27 +47,6 @@ temporary failures.
 
 -   `str`: The generated text completion.
 
-### `generate_batch`
-
-The `generate_batch` method generates a text completion using OpenAI's API, with
-a given system prompt and a list of user prompts. It is decorated with retry
-logic to handle temporary failures.
-
-#### Parameters
-
--   `system_prompt (str)`: The system prompt to provide context or instructions
-    for the generation.
--   `user_prompts (List[str])`: The list of user prompts, based on which the
-    text completion is generated.
--   `max_tokens (int)`: The maximum number of tokens to generate in the response
-    (default: 1000).
--   `json (bool)`: Whether to use OpenAI's JSON response format (default:
-    False).
-
-#### Returns
-
--   `str`: The generated text completion.
-
 ## Retry Decorator
 
 The `retry_with_exponential_backoff` decorator is used to apply retry logic with

@@ -1,6 +1,7 @@
-from typing import List, Optional
+from typing import Optional
 from ollama import Client, chat
 from .llm_provider import LLMProvider
+from databonsai.utils.logs import logger
 
 
 class OllamaProvider(LLMProvider):
@@ -55,51 +56,19 @@ class OllamaProvider(LLMProvider):
             raise ValueError("System prompt is required.")
         if not user_prompt:
             raise ValueError("User prompt is required.")
+        try:
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ]
 
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ]
+            response = self._chat(
+                messages,
+                options={"temperature": self.temperature, "num_predict": max_tokens},
+            )
+            completion = response["message"]["content"]
 
-        response = self._chat(
-            messages,
-            options={"temperature": self.temperature, "num_predict": max_tokens},
-        )
-        completion = response["message"]["content"]
-
-        return completion
-
-    def generate_batch(
-        self, system_prompt: str, user_prompts: List[str], max_tokens=1000
-    ) -> str:
-        """
-        Generates a text completion using Ollama's API, with a given system prompt and list of user prompts.
-        This method is decorated with retry logic to handle temporary failures.
-        Parameters:
-        system_prompt (str): The system prompt to provide context or instructions for the generation.
-        user_prompts (List[str]): The list of user prompts, based on which the text completion is generated.
-        max_tokens (int): The maximum number of tokens to generate in the response.
-        Returns:
-        str: The generated text completion.
-        """
-        if not system_prompt:
-            raise ValueError("System prompt is required.")
-        if len(user_prompts) == 0:
-            raise ValueError("User prompt is required.")
-
-        input_data_prompt = ", ".join(
-            [f"Content {idx+1}: {prompt}" for idx, prompt in enumerate(user_prompts)]
-        )
-
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": input_data_prompt},
-        ]
-
-        response = self._chat(
-            messages,
-            options={"temperature": self.temperature, "num_predict": max_tokens},
-        )
-        completion = response["message"]["content"]
-
-        return completion
+            return completion
+        except Exception as e:
+            logger.warning(f"Error occurred during generation: {str(e)}")
+            raise

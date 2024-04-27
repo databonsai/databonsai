@@ -29,6 +29,10 @@ categorization tasks where inputs are classified into predefined categories.
 -   `system_message` (str): A system message used for single input
     categorization based on the provided categories and examples.
 -   `system_message_batch` (str): A system message used for batch input
+-   `category_mapping` (Dict[int, str]): Mapping of category index to category
+    name
+-   `inverse_category_mapping` (Dict[str, int]): Mapping of category name to
+    index
 
 ## Methods
 

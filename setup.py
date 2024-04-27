@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="databonsai",
-    version="0.6.1",
+    version="0.7.0",
     description="A package for cleaning and curating data with LLMs",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",

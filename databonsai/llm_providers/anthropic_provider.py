@@ -4,7 +4,7 @@ import os
 from functools import wraps
 from tenacity import retry, wait_exponential, stop_after_attempt
 from dotenv import load_dotenv
-from typing import List
+from databonsai.utils.logs import logger
 
 load_dotenv()
 
@@ -20,8 +20,8 @@ class AnthropicProvider(LLMProvider):
         api_key: str = None,
         multiplier: int = 1,
         min_wait: int = 1,
-        max_wait: int = 60,
-        max_tries: int = 10,
+        max_wait: int = 30,
+        max_tries: int = 5,
         model: str = "claude-3-haiku-20240307",
         temperature: float = 0,
     ):
@@ -90,71 +90,31 @@ class AnthropicProvider(LLMProvider):
         Returns:
         str: The generated text completion.
         """
-        if not system_prompt:
-            raise ValueError("System prompt is required.")
-        if not user_prompt:
-            raise ValueError("User prompt is required.")
-        response = self.client.messages.create(
-            model=self.model,
-            max_tokens=max_tokens,
-            temperature=self.temperature,
-            system=f"{system_prompt}",
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": user_prompt,
-                        }
-                    ],
-                }
-            ],
-        )
-        self.input_tokens += response.usage.input_tokens
-        self.output_tokens += response.usage.output_tokens
-        return response.content[0].text
-
-    # @retry_with_exponential_backoff
-    def generate_batch(
-        self, system_prompt: str, user_prompts: List[str], max_tokens=1000
-    ) -> str:
-        """
-        Generates a text completion using OpenAI's API, with a given system and user prompt.
-        This method is decorated with retry logic to handle temporary failures.
-
-        Parameters:
-        system_prompt (str): The system prompt to provide context or instructions for the generation.
-        user_prompt (str): The user's prompt, based on which the text completion is generated.
-        max_tokens (int): The maximum number of tokens to generate in the response.
-
-        Returns:
-        str: The generated text completion.
-        """
-        if not system_prompt:
-            raise ValueError("System prompt is required.")
-        if len(user_prompts) == 0:
-            raise ValueError("User prompt is required.")
-        input_data_prompt = ", ".join(
-            [f"Content {idx+1}: {prompt}" for idx, prompt in enumerate(user_prompts)]
-        )
-        response = self.client.messages.create(
-            model=self.model,
-            max_tokens=max_tokens,
-            temperature=self.temperature,
-            system=f"{system_prompt}",
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": input_data_prompt,
-                        }
-                    ],
-                }
-            ],
-        )
-        self.input_tokens += response.usage.input_tokens
-        self.output_tokens += response.usage.output_tokens
-        return response.content[0].text
+        try:
+            if not system_prompt:
+                raise ValueError("System prompt is required.")
+            if not user_prompt:
+                raise ValueError("User prompt is required.")
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=max_tokens,
+                temperature=self.temperature,
+                system=f"{system_prompt}",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": user_prompt,
+                            }
+                        ],
+                    }
+                ],
+            )
+            self.input_tokens += response.usage.input_tokens
+            self.output_tokens += response.usage.output_tokens
+            return response.content[0].text
+        except Exception as e:
+            logger.warning(f"Error occurred during generation: {str(e)}")
+            raise

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 from databonsai.categorize.base_categorizer import BaseCategorizer
 from pydantic import model_validator, computed_field
 
@@ -36,40 +36,57 @@ class MultiCategorizer(BaseCategorizer):
     @computed_field
     @property
     def system_message(self) -> str:
+        categories_with_numbers = "\n".join(
+            [f"{i}: {desc}" for i, desc in enumerate(self.categories.values())]
+        )
         system_message = f"""
-        Each category is formatted as <category>: <description of data that fits the category>
-        {str(self.categories)}
+        Each category is formatted as <number>: <description of data that fits the category>
+        {categories_with_numbers}
         Classify the given text snippet into one or more of the following categories:
-        {str(list(self.categories.keys()))}
+        {str(list(range(len(self.categories))))}
         Do not use any other categories.
-        Reply with a list of categories separated by || for each text snippet. Do not make any other conversation.
+        Assign multiple categories to one content snippet by separating the categories with ||. Do not make any other conversation.
         """
 
         # Add in fewshot examples
         if self.examples:
             for example in self.examples:
-                system_message += f"\nEXAMPLE: {example['example']}  RESPONSE: {example['response'].replace(',', '||')}"
+                response_numbers = [
+                    str(self.inverse_category_mapping[category.strip()])
+                    for category in example["response"].split(",")
+                ]
+                system_message += f"\nEXAMPLE: {example['example']}  RESPONSE: {'||'.join(response_numbers)}"
         return system_message
 
     @computed_field
     @property
     def system_message_batch(self) -> str:
-        categories = self.categories
+        categories_with_numbers = "\n".join(
+            [f"{i}: {desc}" for i, desc in enumerate(self.categories.values())]
+        )
         system_message = f"""
-        Each category is formatted as <category>: <description of data that fits the category>
-        {str(categories)}
+        Each category is formatted as <number>: <description of data that fits the category>
+        {categories_with_numbers}
         Classify the given text snippet into one or more of the following categories:
-        {str(list(categories.keys()))}
+        {str(list(range(len(self.categories))))}
         Do not use any other categories.
-        Reply with a list of || separated categories for each content snippet. Separate them with ##. EXAMPLE: Content 1: <content>, Content 2: <content> \n RESPONSE: <category of content1>||<category of content1>##<category of content2> Do not make any other conversation. Do not mention Content in your response.
+        Assign multiple categories to one content snippet by separating the categories with ||. Differentiate between each content snippet using ##. EXAMPLE: <content1>##<content2> \n RESPONSE: <category number of content1>||<category number of content1>##<category number of content2> Do not make any other conversation.
         """
 
         # Add in fewshot examples
         if self.examples:
             system_message += "\nEXAMPLE: "
-            for idx, example in enumerate(self.examples):
-                system_message += f"Content {str(idx+1)}: {example['example']}, "
-            system_message += f"\nRESPONSE: {'##'.join([example['response'].replace(',', '||') for example in self.examples])}"
+            system_message += (
+                f"{'##'.join([example['example'] for example in self.examples])}"
+            )
+            response_numbers_list = []
+            for example in self.examples:
+                response_numbers = [
+                    str(self.inverse_category_mapping[category.strip()])
+                    for category in example["response"].split(",")
+                ]
+                response_numbers_list.append("||".join(response_numbers))
+            system_message += f"\nRESPONSE: {'##'.join(response_numbers_list)}"
         return system_message
 
     def categorize(self, input_data: str) -> str:
@@ -86,10 +103,16 @@ class MultiCategorizer(BaseCategorizer):
             ValueError: If the predicted categories are not a subset of the provided categories.
         """
 
-        # Call the LLM provider to get the predicted categories
+        # Call the LLM provider to get the predicted category numbers
         response = self.llm_provider.generate(self.system_message, input_data)
-        predicted_categories = [category.strip() for category in response.split("||")]
+        predicted_category_numbers = [
+            int(category.strip()) for category in response.split("||")
+        ]
 
+        # Convert the category numbers back to category keys
+        predicted_categories = [
+            self.category_mapping[number] for number in predicted_category_numbers
+        ]
         return ",".join(self.validate_predicted_categories(predicted_categories))
 
     def categorize_batch(self, input_data: List[str]) -> List[str]:
@@ -106,23 +129,28 @@ class MultiCategorizer(BaseCategorizer):
             ValueError: If the predicted categories are not a subset of the provided categories.
         """
         if len(input_data) == 1:
-            return self.validate_predicted_categories([self.categorize(input_data[0])])
-        # Call the LLM provider to get the predicted categories
-        response = self.llm_provider.generate_batch(
-            self.system_message_batch, input_data
-        )
-        # Split the response into category sets for each input data
-        category_sets = response.split("##")
+            return [self.categorize(next(iter(input_data)))]
 
-        if len(category_sets) != len(input_data):
+        input_data_prompt = "##".join(input_data)
+        # Call the LLM provider to get the predicted category numbers
+        response = self.llm_provider.generate(
+            self.system_message_batch, input_data_prompt
+        )
+        # Split the response into category number sets for each input data
+        category_number_sets = response.split("##")
+
+        if len(category_number_sets) != len(input_data):
             raise ValueError(
-                f"Number of predicted category sets ({len(category_sets)}) does not match the number of input data ({len(input_data)})."
+                f"Number of predicted category sets ({len(category_number_sets)}) does not match the number of input data ({len(input_data)})."
             )
 
         predicted_categories_list = []
-        for category_set in category_sets:
+        for category_number_set in category_number_sets:
+            predicted_category_numbers = [
+                int(category.strip()) for category in category_number_set.split("||")
+            ]
             predicted_categories = [
-                category.strip() for category in category_set.split("||")
+                self.category_mapping[number] for number in predicted_category_numbers
             ]
             predicted_categories_str = ",".join(
                 self.validate_predicted_categories(predicted_categories)

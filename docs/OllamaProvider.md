@@ -37,25 +37,6 @@ given system prompt and a user prompt.
 
 -   `str`: The generated text completion.
 
-### `generate_batch`
-
-The `generate_batch` method generates a text completion using Ollama's API, with
-a given system prompt and a list of user prompts. Note that generate_batch does
-not work well with smaller models.
-
-#### Parameters
-
--   `system_prompt (str)`: The system prompt to provide context or instructions
-    for the generation.
--   `user_prompts (List[str])`: The list of user prompts, based on which the
-    text completion is generated.
--   `max_tokens (int)`: The maximum number of tokens to generate in the response
-    (default: 1000).
-
-#### Returns
-
--   `str`: The generated text completion.
-
 ## Usage
 
 If you have a host URL for the Ollama API:

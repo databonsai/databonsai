@@ -1,10 +1,10 @@
-from typing import List
 from openai import OpenAI
 from .llm_provider import LLMProvider
 import os
 from functools import wraps
 from tenacity import retry, wait_exponential, stop_after_attempt
 from dotenv import load_dotenv
+from databonsai.utils.logs import logger
 
 load_dotenv()
 
@@ -20,8 +20,8 @@ class OpenAIProvider(LLMProvider):
         api_key: str = None,
         multiplier: int = 1,
         min_wait: int = 1,
-        max_wait: int = 60,
-        max_tries: int = 10,
+        max_wait: int = 30,
+        max_tries: int = 5,
         model: str = "gpt-4-turbo",
         temperature: float = 0,
     ):
@@ -51,6 +51,7 @@ class OpenAIProvider(LLMProvider):
         try:
             self.client.models.retrieve(model)
         except Exception as e:
+            logger.warning(e.response.status_code)
             raise ValueError(f"Invalid OpenAI model: {model}") from e
         self.temperature = temperature
         self.input_tokens = 0
@@ -101,59 +102,22 @@ class OpenAIProvider(LLMProvider):
             raise ValueError("System prompt is required.")
         if not user_prompt:
             raise ValueError("User prompt is required.")
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"{user_prompt}"},
-            ],
-            temperature=self.temperature,
-            max_tokens=max_tokens,
-            frequency_penalty=0,
-            presence_penalty=0,
-            response_format={"type": "json_object"} if json else {"type": "text"},
-        )
-        self.input_tokens += response.usage.prompt_tokens
-        self.output_tokens += response.usage.completion_tokens
-        return response.choices[0].message.content
-
-    @retry_with_exponential_backoff
-    def generate_batch(
-        self, system_prompt: str, user_prompts: List[str], max_tokens=1000, json=False
-    ) -> str:
-        """
-        Generates a text completion using OpenAI's API, with a given system and user prompt.
-        This method is decorated with retry logic to handle temporary failures.
-
-        Parameters:
-        system_prompt (str): The system prompt to provide context or instructions for the generation.
-        user_prompt (str): The user's prompt, based on which the text completion is generated.
-        max_tokens (int): The maximum number of tokens to generate in the response.
-        json (bool): Whether to use OpenAI's JSON response format.
-
-        Returns:
-        str: The generated text completion.
-        """
-        if not system_prompt:
-            raise ValueError("System prompt is required.")
-        if len(user_prompts) == 0:
-            raise ValueError("User prompt is required.")
-        input_data_prompt = ", ".join(
-            [f"Content {idx+1}: {prompt}" for idx, prompt in enumerate(user_prompts)]
-        )
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": input_data_prompt},
-        ]
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            temperature=self.temperature,
-            max_tokens=max_tokens,
-            frequency_penalty=0,
-            presence_penalty=0,
-            response_format={"type": "json_object"} if json else {"type": "text"},
-        )
-        self.input_tokens += response.usage.prompt_tokens
-        self.output_tokens += response.usage.completion_tokens
-        return response.choices[0].message.content
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"{user_prompt}"},
+                ],
+                temperature=self.temperature,
+                max_tokens=max_tokens,
+                frequency_penalty=0,
+                presence_penalty=0,
+                response_format={"type": "json_object"} if json else {"type": "text"},
+            )
+            self.input_tokens += response.usage.prompt_tokens
+            self.output_tokens += response.usage.completion_tokens
+            return response.choices[0].message.content
+        except Exception as e:
+            logger.warning(f"Error occurred during generation: {str(e)}")
+            raise

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "databonsai"
-version = "0.6.1"
+version = "0.7.0"
 description = "A Python package to clean and curate your data with LLMs"
 authors = ["Alvin Ryanputra <databonsai.ai@gmail.com>"]
 
