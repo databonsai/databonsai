@@ -74,7 +74,7 @@ Transforms a batch of input data using the specified LLM provider.
 Prepare the transformer:
 
 ```python
-from databonsai.llm_providers import OpenAIProvider
+from databonsai.llm_providers import OpenAIProvider, AnthropicProvider
 from databonsai.transform import BaseTransformer
 
 pii_remover = BaseTransformer(
