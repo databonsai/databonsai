@@ -152,11 +152,6 @@ class ExtractTransformer(BaseTransformer):
             self.system_message, input_data, max_tokens=max_tokens
         )
 
-        try:
-            transformed_data = eval(response)
-        except (SyntaxError, NameError, TypeError, ZeroDivisionError):
-            raise ValueError("Invalid format in the transformed data.")
-
         # Validate the transformed data
         # if not isinstance(response, list):
         #     raise ValueError("Transformed data must be a list.")
