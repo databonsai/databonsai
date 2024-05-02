@@ -96,9 +96,9 @@ class ExtractTransformer(BaseTransformer):
         system_message = f"""
         Use the following prompt to transform the input data:
         Input Data: {self.prompt}
-        The transformed data should be a list of dictionaries, where each dictionary has the following schema:
-        {self.output_schema}
-        Reply with a JSON-formatted list of dictionaries. Do not make any conversation.
+        The transformed data should be in JSONL format, with each line containing a question and answer attribute.
+        Return one question/answer object per line. Do not include an array wrapper. Do not include trailing commas. This should be JSONL format.
+        Return only the transformed data. Do not include anything else.
         """
 
         # Add in few-shot examples
@@ -158,19 +158,19 @@ class ExtractTransformer(BaseTransformer):
             raise ValueError("Invalid format in the transformed data.")
 
         # Validate the transformed data
-        if not isinstance(transformed_data, list):
-            raise ValueError("Transformed data must be a list.")
-        for item in transformed_data:
-            if not isinstance(item, dict):
-                raise ValueError(
-                    "Each item in the transformed data must be a dictionary."
-                )
-            if set(item.keys()) != set(self.output_schema.keys()):
-                raise ValueError(
-                    "The keys in the transformed data do not match the schema."
-                )
+        # if not isinstance(response, list):
+        #     raise ValueError("Transformed data must be a list.")
+        # for item in response:
+        #     if not isinstance(item, dict):
+        #         raise ValueError(
+        #             "Each item in the transformed data must be a dictionary."
+        #         )
+        #     if set(item.keys()) != set(self.output_schema.keys()):
+        #         raise ValueError(
+        #             "The keys in the transformed data do not match the schema."
+        #         )
 
-        return transformed_data
+        return response
 
     # def transform_batch(self, input_data: List[str], max_tokens=1000) -> List[List[Dict[str, str]]]:
     #     """
