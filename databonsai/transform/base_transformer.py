@@ -102,7 +102,7 @@ class BaseTransformer(BaseModel):
 
         return system_message
 
-    def transform(self, input_data: str, max_tokens=1000) -> str:
+    def transform(self, input_data: str, max_tokens=1000, json: bool =False) -> str:
         """
         Transforms the input data using the specified LLM provider.
 
@@ -115,12 +115,12 @@ class BaseTransformer(BaseModel):
         """
         # Call the LLM provider to perform the transformation
         response = self.llm_provider.generate(
-            self.system_message, input_data, max_tokens=max_tokens
+            self.system_message, input_data, max_tokens=max_tokens, json=json
         )
         transformed_data = response.strip()
         return transformed_data
 
-    def transform_batch(self, input_data: List[str], max_tokens=1000) -> List[str]:
+    def transform_batch(self, input_data: List[str], max_tokens=1000, json: bool =False) -> List[str]:
         """
         Transforms a batch of input data using the specified LLM provider.
 
@@ -136,7 +136,7 @@ class BaseTransformer(BaseModel):
         # Call the LLM provider to perform the batch transformation
         input_data_prompt = "||".join(input_data)
         response = self.llm_provider.generate(
-            self.system_message_batch, input_data_prompt, max_tokens=max_tokens
+            self.system_message_batch, input_data_prompt, max_tokens=max_tokens, json=json
         )
 
         # Split the response into individual transformed data

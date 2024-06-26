@@ -110,30 +110,8 @@ class ExtractTransformer(BaseTransformer):
 
         return system_message
 
-    # @computed_field
-    # @property
-    # def system_message_batch(self) -> str:
-    #     system_message = f"""
-    #     Use the following prompt to transform each input data:
-    #     Input Data: {self.prompt}
-    #     The transformed data should be a list of dictionaries, where each dictionary has the following schema:
-    #     {self.output_schema}
-    #     Reply with a JSON-formatted list of dictionaries for each input, separated by ||. Do not make any conversation.
-    #     Example: Content 1: <content>, Content 2: <content> \n Response: <JSON-formatted list of dictionaries 1>||<JSON-formatted list of dictionaries 2>
-    #     """
 
-    #     # Add in few-shot examples
-    #     if self.examples:
-    #         system_message += "\nExample: "
-    #         for idx, example in enumerate(self.examples):
-    #             system_message += f"Content {str(idx+1)}: {example['example']}, "
-    #         system_message += f"\nResponse: "
-    #         for example in self.examples:
-    #             system_message += f"{example['response']}||"
-
-    #     return system_message
-
-    def transform(self, input_data: str, max_tokens=1000) -> List[Dict[str, str]]:
+    def transform(self, input_data: str, max_tokens=1000, json: bool =True) -> List[Dict[str, str]]:
         """
         Transforms the input data into a list of dictionaries using the specified LLM provider.
 
@@ -149,7 +127,7 @@ class ExtractTransformer(BaseTransformer):
         """
         # Call the LLM provider to perform the transformation
         response = self.llm_provider.generate(
-            self.system_message, input_data, max_tokens=max_tokens
+            self.system_message, input_data, max_tokens=max_tokens, json=json
         )
 
         try:
