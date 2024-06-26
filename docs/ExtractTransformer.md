@@ -39,6 +39,7 @@ provider.
 -   `input_data` (str): The text data to be transformed.
 -   `max_tokens` (int, optional): The maximum number of tokens to generate in
     the response. Defaults to 1000.
+-   `json` (bool): Whether to turn on JSON mode. Only works with OpenAIProvider for now
 
 #### Returns
 

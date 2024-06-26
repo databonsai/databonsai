@@ -1,7 +1,7 @@
 .env
 .*pyc
 __pycache__/
-venv
+venv/
 dist/
 databonsai.egg-info/
 build/

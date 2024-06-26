@@ -77,7 +77,7 @@ class AnthropicProvider(LLMProvider):
         return wrapper
 
     @retry_with_exponential_backoff
-    def generate(self, system_prompt: str, user_prompt: str, max_tokens=1000) -> str:
+    def generate(self, system_prompt: str, user_prompt: str, max_tokens=1000, json: bool = False) -> str:
         """
         Generates a text completion using Anthropic's Claude API, with a given system and user prompt.
         This method is decorated with retry logic to handle temporary failures.
